@@ -1,0 +1,206 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px;
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  overflow-y: auto;
+}
+
+.titleSection {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--primary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.setupBox {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+  max-width: 1000px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 30px;
+  box-shadow: var(--box-shadow-glow);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 24px;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.select, .input {
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 10px 12px;
+  border-radius: var(--border-radius-sm);
+  outline: none;
+  font-size: 14px;
+  transition: all var(--transition-fast);
+}
+
+.select:focus, .input:focus {
+  border-color: var(--primary);
+  background: var(--bg-surface);
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.characterSelection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.charGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.charCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-md);
+  padding: 16px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  text-align: left;
+}
+
+.charCard::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: var(--border-color);
+}
+
+.charCard:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(30, 30, 36, 0.05);
+}
+
+.selectedCard {
+  border-color: var(--primary);
+  background: var(--bg-hover);
+}
+
+.selectedCard::after {
+  background: var(--primary);
+}
+
+.charHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.charName {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.charQuirk {
+  font-size: 11px;
+  background: rgba(15, 118, 110, 0.08);
+  color: var(--secondary);
+  padding: 2px 6px;
+  border-radius: var(--border-radius-sm);
+  font-weight: 600;
+}
+
+.charAbilityName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.charAbilityText {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.startButton {
+  align-self: center;
+  background: linear-gradient(135deg, #F97316 0%, #C2410C 100%);
+  color: #fff;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 12px 40px;
+  border-radius: var(--border-radius-md);
+  margin-top: 16px;
+  box-shadow: 0 4px 12px rgba(194, 65, 12, 0.15);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.startButton:hover:not(:disabled) {
+  background: linear-gradient(135deg, #FB923C 0%, #EA580C 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(194, 65, 12, 0.25);
+}
+
+.startButton:active {
+  transform: translateY(1px);
+}

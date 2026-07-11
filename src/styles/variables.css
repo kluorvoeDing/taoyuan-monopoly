@@ -1,0 +1,68 @@
+:root {
+  /* Fonts */
+  --font-sans: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /* Theme Colors - Minimalist & Warm Light Theme */
+  --bg-dark: #F9F9FB;          /* Canvas Chalk */
+  --bg-surface: #FFFFFF;       /* Pure Surface */
+  --bg-card: #FFFFFF;
+  --bg-hover: #F4F4F6;         /* Warm Muted */
+  
+  --border-color: #E5E7EB;     /* Whisper Border */
+  --border-glow: rgba(194, 65, 12, 0.05);
+  
+  /* Accent Colors */
+  --primary: #C2410C;          /* Accent Terracotta */
+  --primary-glow: rgba(194, 65, 12, 0.1);
+  --secondary: #0F766E;        /* Sage Teal secondary accent */
+  --secondary-glow: rgba(15, 118, 110, 0.1);
+  
+  --text-primary: #1E1E24;     /* Ink Charcoal */
+  --text-secondary: #5E626F;   /* Refined Steel Gray */
+  --text-muted: #9CA3AF;       /* Light neutral muted */
+  
+  /* Status Colors */
+  --color-green: #10B981;
+  --color-red: #EF4444;
+  --color-yellow: #F59E0B;
+  
+  /* Player Colors - Low-saturation elegant accents */
+  --player-1: #EF4444;         /* Human: Crimson Red */
+  --player-1-glow: rgba(239, 68, 68, 0.08);
+  --player-2: #3B82F6;         /* AI 1: Sky Blue */
+  --player-2-glow: rgba(59, 130, 246, 0.08);
+  --player-3: #10B981;         /* AI 2: Forest Emerald */
+  --player-3-glow: rgba(16, 185, 129, 0.08);
+  --player-4: #8B5CF6;         /* AI 3: Deep Amethyst */
+  --player-4-glow: rgba(139, 92, 246, 0.08);
+
+  /* District Zone Colors (Top Header Bars - Low-saturation pastel shades) */
+  --zone-taoyuan_core: #818CF8;
+  --zone-arts_admin: #F472B6;
+  --zone-luzhu_airport: #60A5FA;
+  --zone-qingpu_transit: #2DD4BF;
+  --zone-zhongli_life: #34D399;
+  --zone-pingzhen_industry: #F59E0B;
+  --zone-mountain_south: #A78BFA;
+  --zone-daxi_bade: #F87171;
+  --zone-guishan_medtech: #FB923C;
+  --zone-coast_defense: #84CC16;
+
+  /* Card and Tile Badges Colors */
+  --badge-start: #10B981;
+  --badge-card: #3B82F6;
+  --badge-fate: #F59E0B;
+  --badge-traffic: #E07A5F;
+  --badge-lottery: #9F92EC;
+
+  /* Borders & Shadows */
+  --border-radius-sm: 6px;
+  --border-radius-md: 10px;
+  --border-radius-lg: 14px;
+  --box-shadow-glow: 0 4px 20px rgba(30, 30, 36, 0.04);
+  --box-shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.6);
+
+  /* Transition timings */
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}

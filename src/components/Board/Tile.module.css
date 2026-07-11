@@ -1,0 +1,166 @@
+.tile {
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 4px 6px 4px;
+  position: relative;
+  width: 70px;
+  height: 78px;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  cursor: pointer;
+  user-select: none;
+  transition: all var(--transition-fast);
+  box-sizing: border-box;
+  text-align: center;
+  overflow: hidden;
+}
+
+.tile:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.selected {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Node ID badge - colored capsule in the top triangular area */
+.tileId {
+  font-family: var(--font-mono, monospace);
+  font-size: 8px;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 8px;
+  color: #fff;
+  background: #64748b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  margin-top: 1px;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.tierBadge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 1px 2.5px;
+  border-radius: 2px;
+  font-weight: bold;
+  font-size: 6.5px;
+  line-height: 1;
+}
+
+.tierS { background: rgba(239, 68, 68, 0.12); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.2); }
+.tierA { background: rgba(245, 158, 11, 0.12); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.2); }
+.tierB { background: rgba(16, 185, 129, 0.12); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.tierC { background: rgba(59, 130, 246, 0.12); color: #3B82F6; border: 1px solid rgba(59, 130, 246, 0.2); }
+
+.name {
+  font-weight: 800;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 1px 0;
+  font-size: 8.5px;
+  width: 56px;
+  z-index: 2;
+}
+
+/* Category or Type tags */
+.specialBadge {
+  font-size: 7.5px;
+  font-weight: 800;
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin-bottom: 4px;
+  z-index: 2;
+}
+
+.badge_start { background: rgba(16, 185, 129, 0.12); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2); }
+.badge_card { background: rgba(59, 130, 246, 0.12); color: #3B82F6; border: 1px solid rgba(59, 130, 246, 0.2); }
+.badge_fate { background: rgba(245, 158, 11, 0.12); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.2); }
+.badge_traffic { background: rgba(224, 122, 95, 0.12); color: #E07A5F; border: 1px solid rgba(224, 122, 95, 0.2); }
+.badge_lottery { background: rgba(159, 146, 236, 0.12); color: #9F92EC; border: 1px solid rgba(159, 146, 236, 0.2); }
+.badge_empty { background: rgba(148, 163, 184, 0.12); color: #64748b; border: 1px solid rgba(148, 163, 184, 0.2); }
+
+/* Status icons inside hexagon */
+.statusContainer {
+  display: flex;
+  gap: 1.5px;
+  justify-content: center;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+}
+
+.statusGuard, .statusDisrupt, .statusDisabled, .statusBoost, .statusRoadblock {
+  font-size: 8px;
+  cursor: help;
+}
+
+/* Raider Spawn tag */
+.raidOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(239, 68, 68, 0.95);
+  color: #fff;
+  font-weight: 800;
+  font-size: 8px;
+  padding: 1px 3px;
+  border-radius: 2px;
+  white-space: nowrap;
+  box-shadow: 0 1px 5px rgba(239, 68, 68, 0.3);
+  z-index: 5;
+}
+
+/* Overlapping Avatars */
+.playersContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  z-index: 8;
+  pointer-events: none;
+}
+
+.playerToken {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid #fff;
+  display: inline-block;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: all var(--transition-fast);
+  background-repeat: no-repeat;
+  margin: 0 -2px;
+  flex-shrink: 0;
+}
+
+.playerToken:hover {
+  transform: scale(1.2) translateY(-1px);
+  z-index: 10;
+}
+
+.validTarget {
+  animation: pulseGlow 1.5s infinite;
+  cursor: crosshair;
+}
+
+@keyframes pulseGlow {
+  0% { opacity: 0.9; }
+  50% { opacity: 1; }
+  100% { opacity: 0.9; }
+}

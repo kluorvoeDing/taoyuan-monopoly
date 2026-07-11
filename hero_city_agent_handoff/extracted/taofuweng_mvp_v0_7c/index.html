@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>桃園 Hero City v0.7c</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div>
+        <h1>桃園 Hero City v0.7c</h1>
+        <p>單機測試版：Map Readability + Game Setup Patch。格子視覺瘦身、開局參數、排名感與平衡測試面板。</p>
+      </div>
+      <div class="top-actions">
+        <button id="newGameBtn" class="secondary">重新開局</button>
+      </div>
+    </header>
+
+    <main class="game-shell">
+      <section class="board-panel">
+        <div id="board" class="board"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="./data/tiles.js"></script>
+  <script src="./data/characters.js"></script>
+  <script src="./data/cards.js"></script>
+  <script src="./data/events.js"></script>
+  <script src="./data/gods.js"></script>
+  <script src="./game.js"></script>
+</body>
+</html>
