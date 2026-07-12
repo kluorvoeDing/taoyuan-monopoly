@@ -32,7 +32,6 @@ interface GameStore {
   quitRoom: () => void;
   listenToRoom: (roomId: string) => void;
   handleHostAILogic: (gameState: GameState) => Promise<void>;
-  updateHeartbeat: () => Promise<void>;
   dispatchOnline: (command: GameCommand) => Promise<{ success: boolean; error?: string }>;
 
   // 匯出存檔 (回傳 JSON 字串)
@@ -338,13 +337,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
 
     (window as any).firestoreUnsubscribe = unsub;
-
-    if ((window as any).heartbeatIntervalId) {
-      clearInterval((window as any).heartbeatIntervalId);
-    }
-    (window as any).heartbeatIntervalId = setInterval(() => {
-      get().updateHeartbeat();
-    }, 10000);
   },
 
   handleHostAILogic: async (gameState: GameState) => {
@@ -355,15 +347,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!activePlayer || gameState.mode === 'finished') return;
 
     const isAi = activePlayer.control === 'ai';
-    const roomRef = doc(db, 'rooms', roomId);
-    const docSnap = await getDoc(roomRef);
-    if (!docSnap.exists()) return;
-    const roomData = docSnap.data();
-    
-    const lobbyPlayer = roomData.players.find((p: any) => p.id === activePlayer.id);
-    const isTimeout = lobbyPlayer && !lobbyPlayer.isAi && (Date.now() - (lobbyPlayer.lastActiveTime || Date.now()) > 45000);
 
     if (isAi) {
+      const roomRef = doc(db, 'rooms', roomId);
       if ((window as any).aiTimeoutId) return;
       
       (window as any).aiTimeoutId = setTimeout(async () => {
@@ -402,58 +388,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           });
         }
       }, 1000);
-    } else if (isTimeout) {
-      const updatedGameState = {
-        ...gameState,
-        players: gameState.players.map(p => {
-          if (p.id === activePlayer.id) {
-            return { ...p, control: 'ai' as const, name: `${p.name} (AI代管)` };
-          }
-          return p;
-        }),
-        eventLog: [
-          {
-            id: Math.random().toString(36).substring(2, 9),
-            timestamp: new Date().toLocaleTimeString("zh-Hant-TW", { hour12: false }),
-            message: `🔌 特工【${activePlayer.name}】斷線超時，轉由戰略 AI 代為接管。`,
-            type: 'INFO' as any
-          },
-          ...gameState.eventLog
-        ]
-      };
-
-      const updatedLobbyPlayers = roomData.players.map((p: any) => {
-        if (p.id === activePlayer.id) {
-          return { ...p, isAi: true };
-        }
-        return p;
-      });
-
-      await updateDoc(roomRef, {
-        players: updatedLobbyPlayers,
-        gameState: updatedGameState,
-        updatedAt: serverTimestamp()
-      });
     }
-  },
-
-  updateHeartbeat: async () => {
-    const { roomId, myPlayerId, isMultiplayer } = get();
-    if (!isMultiplayer || !roomId || !myPlayerId) return;
-
-    const roomRef = doc(db, 'rooms', roomId);
-    const snap = await getDoc(roomRef);
-    if (!snap.exists()) return;
-
-    const players = snap.data().players || [];
-    const updatedPlayers = players.map((p: any) => {
-      if (p.id === myPlayerId) {
-        return { ...p, lastActiveTime: Date.now() };
-      }
-      return p;
-    });
-
-    await updateDoc(roomRef, { players: updatedPlayers });
   },
 
   dispatchOnline: async (command: GameCommand) => {
@@ -495,7 +430,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         updatedAt: serverTimestamp()
       });
 
-      get().updateHeartbeat();
       return { success: true };
     }
 
@@ -506,10 +440,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if ((window as any).firestoreUnsubscribe) {
       (window as any).firestoreUnsubscribe();
       (window as any).firestoreUnsubscribe = null;
-    }
-    if ((window as any).heartbeatIntervalId) {
-      clearInterval((window as any).heartbeatIntervalId);
-      (window as any).heartbeatIntervalId = null;
     }
     set({
       isMultiplayer: false,
