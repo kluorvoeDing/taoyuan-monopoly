@@ -1,17 +1,40 @@
 import { create } from 'zustand';
 import type { GameState, GameCommand, GameOptions } from '../game/types';
 import { gameReducer } from '../game/engine/reducer';
+import { makeAiPreRollDecision, makeAiActionDecision, makeAiPathDecision } from '../game/engine/ai';
+import { CHARACTERS } from '../data/characters';
+import { doc, setDoc, getDoc, updateDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { db } from '../game/firebase';
 
 interface GameStore {
   state: GameState | null;
   logs: string[];
   
-  // 建立新遊戲
+  // 多人連線狀態
+  isMultiplayer: boolean;
+  roomId: string | null;
+  myPlayerId: string | null;
+  multiplayerRole: 'host' | 'guest' | null;
+  onlinePlayers: any[];
+  roomStatus: 'waiting' | 'playing' | 'finished' | null;
+
+  // 建立新遊戲 (單機)
   startGame: (options: GameOptions, characterId: string, rngSeed?: string) => void;
   
   // 發送命令給遊戲引擎
   dispatch: (command: GameCommand) => { success: boolean; error?: string };
   
+  // 多人連線操作
+  createOnlineRoom: (nickname: string, characterId: string, options: GameOptions) => Promise<string>;
+  joinOnlineRoom: (roomId: string, nickname: string, characterId: string) => Promise<{ success: boolean; error?: string }>;
+  setReady: (ready: boolean) => Promise<void>;
+  startMultiplayerGame: () => Promise<void>;
+  quitRoom: () => void;
+  listenToRoom: (roomId: string) => void;
+  handleHostAILogic: (gameState: GameState) => Promise<void>;
+  updateHeartbeat: () => Promise<void>;
+  dispatchOnline: (command: GameCommand) => Promise<{ success: boolean; error?: string }>;
+
   // 匯出存檔 (回傳 JSON 字串)
   exportState: () => string;
   
@@ -66,8 +89,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
   isConsoleMinimized: true,
   setConsoleMinimized: (min) => set({ isConsoleMinimized: min }),
 
+  // 多人連線初始狀態
+  isMultiplayer: false,
+  roomId: null,
+  myPlayerId: null,
+  multiplayerRole: null,
+  onlinePlayers: [],
+  roomStatus: null,
+
   startGame: (options, characterId, rngSeed) => {
-    // 儲存設定到 localStorage
     try {
       localStorage.setItem(LOCAL_STORAGE_SETTINGS_KEY, JSON.stringify(options));
     } catch (e) {
@@ -78,7 +108,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const result = gameReducer(null, startCmd);
     
     if (result.state) {
-      // 寫入自動存檔
       try {
         localStorage.setItem(LOCAL_STORAGE_SAVE_KEY, JSON.stringify(result.state));
       } catch (e) {
@@ -92,39 +121,355 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  dispatch: (command) => {
-    const currentState = get().state;
-    // START_GAME 特殊處理
-    if (command.type === 'START_GAME') {
-      get().startGame(command.options, command.characterId, command.rngSeed);
-      return { success: true };
-    }
-
-    if (!currentState) {
-      return { success: false, error: '遊戲尚未啟動' };
-    }
-
-    const result = gameReducer(currentState, command);
+  createOnlineRoom: async (nickname, characterId, options) => {
+    const roomId = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const myPlayerId = 'p1';
     
+    const initialPlayers = [
+      { id: 'p1', name: nickname, characterId, isReady: true, isAi: false, lastActiveTime: Date.now() }
+    ];
+
+    const initialRoomData = {
+      roomId,
+      status: 'waiting',
+      hostId: 'p1',
+      players: initialPlayers,
+      options,
+      gameState: null,
+      lastAction: null,
+      updatedAt: serverTimestamp()
+    };
+
+    await setDoc(doc(db, 'rooms', roomId), initialRoomData);
+
+    set({
+      isMultiplayer: true,
+      roomId,
+      myPlayerId,
+      multiplayerRole: 'host',
+      onlinePlayers: initialPlayers,
+      roomStatus: 'waiting'
+    });
+
+    get().listenToRoom(roomId);
+    return roomId;
+  },
+
+  joinOnlineRoom: async (roomId, nickname, characterId) => {
+    const roomRef = doc(db, 'rooms', roomId.toUpperCase());
+    const snap = await getDoc(roomRef);
+    if (!snap.exists()) {
+      return { success: false, error: '該房間號不存在' };
+    }
+
+    const data = snap.data();
+    if (data.status !== 'waiting') {
+      return { success: false, error: '該對局已經開始或已結束' };
+    }
+
+    const players = data.players || [];
+    if (players.length >= 4) {
+      return { success: false, error: '該房間人數已滿' };
+    }
+
+    const myPlayerId = `p${players.length + 1}`;
+    const newPlayer = {
+      id: myPlayerId,
+      name: nickname,
+      characterId,
+      isReady: false,
+      isAi: false,
+      lastActiveTime: Date.now()
+    };
+
+    const updatedPlayers = [...players, newPlayer];
+    await updateDoc(roomRef, { players: updatedPlayers });
+
+    set({
+      isMultiplayer: true,
+      roomId: roomId.toUpperCase(),
+      myPlayerId,
+      multiplayerRole: 'guest',
+      onlinePlayers: updatedPlayers,
+      roomStatus: 'waiting'
+    });
+
+    get().listenToRoom(roomId.toUpperCase());
+    return { success: true };
+  },
+
+  setReady: async (ready) => {
+    const { roomId, myPlayerId, isMultiplayer } = get();
+    if (!isMultiplayer || !roomId || !myPlayerId) return;
+
+    const roomRef = doc(db, 'rooms', roomId);
+    const snap = await getDoc(roomRef);
+    if (!snap.exists()) return;
+
+    const players = snap.data().players || [];
+    const updatedPlayers = players.map((p: any) => {
+      if (p.id === myPlayerId) {
+        return { ...p, isReady: ready };
+      }
+      return p;
+    });
+
+    await updateDoc(roomRef, { players: updatedPlayers });
+  },
+
+  startMultiplayerGame: async () => {
+    const { roomId, multiplayerRole, isMultiplayer, onlinePlayers } = get();
+    if (!isMultiplayer || !roomId || multiplayerRole !== 'host') return;
+
+    const roomRef = doc(db, 'rooms', roomId);
+    const snap = await getDoc(roomRef);
+    if (!snap.exists()) return;
+
+    const roomData = snap.data();
+    const options = roomData.options;
+
+    const playersForGame: any[] = [];
+    
+    onlinePlayers.forEach((p) => {
+      playersForGame.push({
+        id: p.id,
+        name: p.name,
+        characterId: p.characterId,
+        control: 'human',
+        cash: options.startingCash,
+        position: 0,
+        cards: [],
+        statusEffects: [],
+        isBankrupt: false,
+        cooldowns: { [p.characterId]: 0 },
+        landActionUsed: false,
+        provisionalLicenseUsed: false
+      });
+    });
+
+    const availableAiChars = ['jobs_think', 'lin_mansion', 'gou_lift', 'huang_smoke', 'jolin_zero', 'jay_turn', 'musk_bite', 'bill_rice'].filter(
+      cid => !onlinePlayers.some(p => p.characterId === cid)
+    );
+
+    const neededAi = 4 - onlinePlayers.length;
+    const finalOnlinePlayers = [...onlinePlayers];
+
+    for (let i = 0; i < neededAi; i++) {
+      const charId = availableAiChars[i] || 'jobs_think';
+      const aiId = `p${playersForGame.length + 1}`;
+      const charConfig = CHARACTERS.find(c => c.id === charId)!;
+      
+      playersForGame.push({
+        id: aiId,
+        name: `${charConfig.name} (AI)`,
+        characterId: charId,
+        control: 'ai',
+        cash: options.startingCash,
+        position: 0,
+        cards: [],
+        statusEffects: [],
+        isBankrupt: false,
+        cooldowns: { [charId]: 0 },
+        landActionUsed: false,
+        provisionalLicenseUsed: false
+      });
+
+      finalOnlinePlayers.push({
+        id: aiId,
+        name: `${charConfig.name} (AI)`,
+        characterId: charId,
+        isReady: true,
+        isAi: true,
+        lastActiveTime: Date.now()
+      });
+    }
+
+    const startCmd: GameCommand = {
+      type: 'START_GAME',
+      options: {
+        ...options,
+        aiCount: neededAi
+      },
+      characterId: onlinePlayers[0].characterId,
+      rngSeed: `online_${roomId}_${Date.now()}`
+    };
+
+    const initResult = gameReducer(null, startCmd);
+    if (!initResult.state) return;
+
+    const finalGameState = {
+      ...initResult.state,
+      players: playersForGame
+    };
+
+    await updateDoc(roomRef, {
+      status: 'playing',
+      players: finalOnlinePlayers,
+      gameState: finalGameState,
+      updatedAt: serverTimestamp()
+    });
+  },
+
+  listenToRoom: (roomId: string) => {
+    if ((window as any).firestoreUnsubscribe) {
+      (window as any).firestoreUnsubscribe();
+    }
+
+    const unsub = onSnapshot(doc(db, 'rooms', roomId), (docSnap) => {
+      if (!docSnap.exists()) return;
+      const data = docSnap.data();
+
+      set({
+        onlinePlayers: data.players || [],
+        roomStatus: data.status
+      });
+
+      if (data.status === 'playing' && data.gameState) {
+        set({
+          state: data.gameState,
+          logs: data.gameState.eventLog ? data.gameState.eventLog.map((l: any) => l.message) : []
+        });
+
+        const isHost = get().multiplayerRole === 'host';
+        if (isHost) {
+          get().handleHostAILogic(data.gameState);
+        }
+      }
+    });
+
+    (window as any).firestoreUnsubscribe = unsub;
+
+    if ((window as any).heartbeatIntervalId) {
+      clearInterval((window as any).heartbeatIntervalId);
+    }
+    (window as any).heartbeatIntervalId = setInterval(() => {
+      get().updateHeartbeat();
+    }, 10000);
+  },
+
+  handleHostAILogic: async (gameState: GameState) => {
+    const { roomId, multiplayerRole } = get();
+    if (multiplayerRole !== 'host' || !roomId) return;
+
+    const activePlayer = gameState.players.find(p => p.id === gameState.activePlayerId);
+    if (!activePlayer || gameState.mode === 'finished') return;
+
+    const isAi = activePlayer.control === 'ai';
+    const roomRef = doc(db, 'rooms', roomId);
+    const docSnap = await getDoc(roomRef);
+    if (!docSnap.exists()) return;
+    const roomData = docSnap.data();
+    
+    const lobbyPlayer = roomData.players.find((p: any) => p.id === activePlayer.id);
+    const isTimeout = lobbyPlayer && !lobbyPlayer.isAi && (Date.now() - (lobbyPlayer.lastActiveTime || Date.now()) > 45000);
+
+    if (isAi) {
+      if ((window as any).aiTimeoutId) return;
+      
+      (window as any).aiTimeoutId = setTimeout(async () => {
+        (window as any).aiTimeoutId = null;
+        
+        const latestDoc = await getDoc(roomRef);
+        if (!latestDoc.exists()) return;
+        const currentGameState = latestDoc.data().gameState;
+        if (!currentGameState || currentGameState.activePlayerId !== activePlayer.id) return;
+
+        if (currentGameState.phase === 'preRoll') {
+          const preRollCmd = makeAiPreRollDecision(currentGameState, activePlayer.id);
+          const cmd = preRollCmd || { type: 'ROLL_DICE', playerId: activePlayer.id };
+          get().dispatchOnline(cmd);
+        } else if (currentGameState.phase === 'choosingPath') {
+          const pathDecision = makeAiPathDecision(currentGameState, activePlayer.id);
+          if (pathDecision) {
+            get().dispatchOnline(pathDecision);
+          }
+        } else if (currentGameState.phase === 'action') {
+          const actionCmds = makeAiActionDecision(currentGameState, activePlayer.id);
+          let tempState = currentGameState;
+          const eventsList: any[] = [];
+          
+          for (const command of actionCmds) {
+            const res = gameReducer(tempState, command);
+            if (res.state) {
+              tempState = res.state;
+              eventsList.push(...res.events);
+            }
+          }
+
+          await updateDoc(roomRef, {
+            gameState: tempState,
+            updatedAt: serverTimestamp()
+          });
+        }
+      }, 1000);
+    } else if (isTimeout) {
+      const updatedGameState = {
+        ...gameState,
+        players: gameState.players.map(p => {
+          if (p.id === activePlayer.id) {
+            return { ...p, control: 'ai' as const, name: `${p.name} (AI代管)` };
+          }
+          return p;
+        }),
+        eventLog: [
+          {
+            id: Math.random().toString(36).substring(2, 9),
+            timestamp: new Date().toLocaleTimeString("zh-Hant-TW", { hour12: false }),
+            message: `🔌 特工【${activePlayer.name}】斷線超時，轉由戰略 AI 代為接管。`,
+            type: 'INFO' as any
+          },
+          ...gameState.eventLog
+        ]
+      };
+
+      const updatedLobbyPlayers = roomData.players.map((p: any) => {
+        if (p.id === activePlayer.id) {
+          return { ...p, isAi: true };
+        }
+        return p;
+      });
+
+      await updateDoc(roomRef, {
+        players: updatedLobbyPlayers,
+        gameState: updatedGameState,
+        updatedAt: serverTimestamp()
+      });
+    }
+  },
+
+  updateHeartbeat: async () => {
+    const { roomId, myPlayerId, isMultiplayer } = get();
+    if (!isMultiplayer || !roomId || !myPlayerId) return;
+
+    const roomRef = doc(db, 'rooms', roomId);
+    const snap = await getDoc(roomRef);
+    if (!snap.exists()) return;
+
+    const players = snap.data().players || [];
+    const updatedPlayers = players.map((p: any) => {
+      if (p.id === myPlayerId) {
+        return { ...p, lastActiveTime: Date.now() };
+      }
+      return p;
+    });
+
+    await updateDoc(roomRef, { players: updatedPlayers });
+  },
+
+  dispatchOnline: async (command: GameCommand) => {
+    const { roomId, isMultiplayer, state } = get();
+    if (!isMultiplayer || !roomId || !state) return { success: false };
+
+    const roomRef = doc(db, 'rooms', roomId);
+    const result = gameReducer(state, command);
     if (result.error) {
       return { success: false, error: result.error };
     }
 
     if (result.state) {
-      // 寫入自動存檔
-      try {
-        localStorage.setItem(LOCAL_STORAGE_SAVE_KEY, JSON.stringify(result.state));
-      } catch (e) {
-        console.error(e);
-      }
-
-      // 將新產生的事件，加入 state.eventLog 與 logs
       const nextEventLogs = [...result.state.eventLog];
-      
       result.events.forEach(e => {
         const timestamp = new Date().toLocaleTimeString("zh-Hant-TW", { hour12: false });
-        
-        // 壓入地圖引擎自帶日誌
         nextEventLogs.unshift({
           id: Math.random().toString(36).substring(2, 9),
           timestamp,
@@ -135,7 +480,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
         });
       });
 
-      // 限制日誌上限為 120 筆
       if (nextEventLogs.length > 120) {
         nextEventLogs.splice(120);
       }
@@ -145,7 +489,93 @@ export const useGameStore = create<GameStore>((set, get) => ({
         eventLog: nextEventLogs
       };
 
-      // 再次自動更新 localStorage 存檔
+      await updateDoc(roomRef, {
+        gameState: finalState,
+        lastAction: command,
+        updatedAt: serverTimestamp()
+      });
+
+      get().updateHeartbeat();
+      return { success: true };
+    }
+
+    return { success: false, error: '狀態更新無效' };
+  },
+
+  quitRoom: () => {
+    if ((window as any).firestoreUnsubscribe) {
+      (window as any).firestoreUnsubscribe();
+      (window as any).firestoreUnsubscribe = null;
+    }
+    if ((window as any).heartbeatIntervalId) {
+      clearInterval((window as any).heartbeatIntervalId);
+      (window as any).heartbeatIntervalId = null;
+    }
+    set({
+      isMultiplayer: false,
+      roomId: null,
+      myPlayerId: null,
+      multiplayerRole: null,
+      onlinePlayers: [],
+      roomStatus: null,
+      state: null,
+      logs: []
+    });
+  },
+
+  dispatch: (command) => {
+    // START_GAME 特殊處理
+    if (command.type === 'START_GAME') {
+      get().startGame(command.options, command.characterId, command.rngSeed);
+      return { success: true };
+    }
+
+    // 多人連線模式
+    if (get().isMultiplayer) {
+      get().dispatchOnline(command);
+      return { success: true };
+    }
+
+    const currentState = get().state;
+    if (!currentState) {
+      return { success: false, error: '遊戲尚未啟動' };
+    }
+
+    const result = gameReducer(currentState, command);
+    if (result.error) {
+      return { success: false, error: result.error };
+    }
+
+    if (result.state) {
+      try {
+        localStorage.setItem(LOCAL_STORAGE_SAVE_KEY, JSON.stringify(result.state));
+      } catch (e) {
+        console.error(e);
+      }
+
+      const nextEventLogs = [...result.state.eventLog];
+      
+      result.events.forEach(e => {
+        const timestamp = new Date().toLocaleTimeString("zh-Hant-TW", { hour12: false });
+        nextEventLogs.unshift({
+          id: Math.random().toString(36).substring(2, 9),
+          timestamp,
+          message: e.message,
+          type: e.type as any,
+          playerId: e.playerId,
+          cashChange: e.amount
+        });
+      });
+
+      if (nextEventLogs.length > 120) {
+        nextEventLogs.splice(120);
+      }
+
+      const finalState = {
+        ...result.state,
+        eventLog: nextEventLogs
+      };
+
       try {
         localStorage.setItem(LOCAL_STORAGE_SAVE_KEY, JSON.stringify(finalState));
       } catch (e) {
@@ -173,7 +603,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     try {
       const parsed = JSON.parse(json);
       if (parsed && parsed.version && parsed.players && parsed.tiles) {
-        // 使用 FORCE_STATE 同步狀態
         const result = gameReducer(parsed, { type: 'FORCE_STATE', state: parsed });
         if (result.state) {
           localStorage.setItem(LOCAL_STORAGE_SAVE_KEY, JSON.stringify(result.state));
@@ -191,6 +620,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   resetGame: () => {
+    if (get().isMultiplayer) {
+      get().quitRoom();
+      return;
+    }
     try {
       localStorage.removeItem(LOCAL_STORAGE_SAVE_KEY);
     } catch (e) {

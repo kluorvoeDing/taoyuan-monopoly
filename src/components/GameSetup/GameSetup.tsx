@@ -162,9 +162,18 @@ export const GameSetup: React.FC = () => {
           </div>
         </div>
 
-        <button className={styles.startButton} onClick={handleStart}>
-          進入 Hero City 棋盤
-        </button>
+        <div className={styles.buttonGroup}>
+          <button className={styles.startButton} onClick={handleStart}>
+            進入 Hero City 棋盤
+          </button>
+          <button 
+            className={styles.multiplayerButton} 
+            onClick={() => useGameStore.setState({ isMultiplayer: true })}
+            type="button"
+          >
+            🌐 線上多人連線模式
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -204,3 +204,35 @@
 .startButton:active {
   transform: translateY(1px);
 }
+
+.buttonGroup {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-top: 16px;
+}
+
+.multiplayerButton {
+  background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+  color: #fff;
+  border: none;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 12px 40px;
+  border-radius: var(--border-radius-md);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.multiplayerButton:hover {
+  background: linear-gradient(135deg, #6366F1 0%, #818CF8 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.25);
+}
+
+.multiplayerButton:active {
+  transform: translateY(1px);
+}
