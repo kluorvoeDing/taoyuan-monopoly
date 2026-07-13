@@ -95,10 +95,10 @@ export const Tile = React.memo<TileProps>(({
 
       {/* 據點價值/類型標記 */}
       {isLand ? (
-        <span style={{ fontSize: '8px', color: 'var(--text-secondary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'center', zIndex: 2 }}>
+        <span style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '2px', justifyContent: 'center', zIndex: 2 }}>
           {tileState.ownerId ? (
             <>
-              <span style={{ fontSize: '11px' }} title={`L${tileState.level} 據點`}>
+              <span style={{ fontSize: '13px' }} title={`L${tileState.level} 據點`}>
                 {tileState.level === 1 ? '⛺' : tileState.level === 2 ? '🏢' : tileState.level === 3 ? '🏬' : '🏛️'}
               </span>
               <span>L{tileState.level}</span>

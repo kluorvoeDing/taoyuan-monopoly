@@ -842,9 +842,9 @@ export const CenterDashboard: React.FC = () => {
         {!logsCollapsed && (
           <div className={styles.hudLogsDropdown}>
             {state.eventLog.length === 0 ? (
-              <span style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '8px' }}>等待異能對決通訊訊號...</span>
+              <span style={{ color: 'var(--text-muted, #94a3b8)', fontSize: '11px' }}>等待異能對決通訊訊號...</span>
             ) : (
-              state.eventLog.slice(0, 15).map(log => (
+              state.eventLog.slice(0, 20).map(log => (
                 <div key={log.id} className={styles.dropdownLogEntry}>
                   <span className={styles.dropdownLogTime}>[{log.timestamp}]</span>
                   <span>{formatLogMessage(log.message)}</span>

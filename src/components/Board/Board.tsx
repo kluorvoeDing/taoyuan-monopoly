@@ -68,16 +68,16 @@ const NODE_COORDINATES: Record<number, { x: number; y: number }> = {
   19: { x: 59, y: 46 },
 
   // Inward Bottom Arm
-  6: { x: 50, y: 84 },
-  7: { x: 44, y: 76 },
-  8: { x: 50, y: 68 },
-  55: { x: 44, y: 62 },
+  6: { x: 55, y: 82 },
+  7: { x: 43, y: 74 },
+  8: { x: 55, y: 67 },
+  55: { x: 43, y: 59 },
 
   // Inward Top Arm
-  34: { x: 48, y: 16 },
-  35: { x: 54, y: 24 },
-  36: { x: 48, y: 32 },
-  53: { x: 54, y: 38 },
+  34: { x: 44, y: 18 },
+  35: { x: 55, y: 26 },
+  36: { x: 43, y: 33 },
+  53: { x: 55, y: 41 },
 
   // Central Hub Node
   54: { x: 49, y: 50 }
