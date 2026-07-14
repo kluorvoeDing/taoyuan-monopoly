@@ -5,81 +5,83 @@ import { CenterDashboard } from '../Dashboard/CenterDashboard';
 import { GRAPH_CONNECTIONS, getValidNextDirections } from '../../game/engine/reducer';
 import styles from './Board.module.css';
 
-// 56 個地圖據點的絕對百分比座標 (星軌星座星圖分佈)
+// 56 個地圖據點的絕對百分比座標（風車星圖：外環四邊 + 四條旋臂捲入中央樞紐）
+// 由 scripts/board-layout.mjs 產生並驗證：任兩格零重疊、連線不穿過非端點格子。
+// 調整佈局請改該腳本重新產生，勿直接手改數值。
 const NODE_COORDINATES: Record<number, { x: number; y: number }> = {
-  // Bottom Edge (y = 88, 94 staggered, shifted right)
-  47: { x: 7.0, y: 94.0 },
-  51: { x: 20.5, y: 94.0 },
-  0: { x: 27.5, y: 88.0 },
-  1: { x: 34.0, y: 94.0 },
-  2: { x: 40.5, y: 88.0 },
-  3: { x: 47.0, y: 94.0 },
-  4: { x: 53.5, y: 88.0 },
-  5: { x: 60.0, y: 94.0 },
-  9: { x: 66.5, y: 88.0 },
-  10: { x: 73.0, y: 94.0 },
-  11: { x: 79.5, y: 88.0 },
-  12: { x: 86.0, y: 94.0 },
-  13: { x: 93.0, y: 88.0 },
+  // 底邊（左→右）
+  47: { x: 4.38, y: 92.22 },
+  51: { x: 11.98, y: 92.22 },
+  0: { x: 19.58, y: 92.22 },
+  1: { x: 27.19, y: 92.22 },
+  2: { x: 34.79, y: 92.22 },
+  3: { x: 42.39, y: 92.22 },
+  4: { x: 50, y: 92.22 },
+  5: { x: 57.61, y: 92.22 },
+  9: { x: 65.21, y: 92.22 },
+  10: { x: 72.81, y: 92.22 },
+  11: { x: 80.42, y: 92.22 },
+  12: { x: 88.02, y: 92.22 },
+  13: { x: 95.63, y: 92.22 },
 
-  // Right Edge (x = 93, 86 staggered)
-  14: { x: 86.0, y: 76.0 },
-  15: { x: 93.0, y: 64.0 },
-  16: { x: 86.0, y: 52.0 },
-  17: { x: 93.0, y: 40.0 },
-  18: { x: 86.0, y: 28.0 },
-  22: { x: 93.0, y: 17.0 },
-  24: { x: 86.0, y: 3.0 },
+  // 右邊（下→上，之字交錯）
+  14: { x: 89.13, y: 77.78 },
+  15: { x: 95.63, y: 66.11 },
+  16: { x: 89.13, y: 54.44 },
+  17: { x: 95.63, y: 42.78 },
+  18: { x: 89.13, y: 31.11 },
+  22: { x: 95.63, y: 19.44 },
+  24: { x: 89.13, y: 7.78 },
 
-  // Top Edge (y = 3, 16 staggered, shifted left)
-  25: { x: 79.5, y: 3.0 },
-  26: { x: 73.0, y: 16.0 },
-  27: { x: 66.5, y: 3.0 },
-  28: { x: 60.0, y: 16.0 },
-  29: { x: 52.5, y: 3.0 },
-  30: { x: 47.0, y: 16.0 },
-  31: { x: 40.5, y: 3.0 },
-  32: { x: 33.0, y: 16.0 },
-  33: { x: 26.5, y: 3.0 },
-  37: { x: 20.0, y: 16.0 },
-  38: { x: 13.5, y: 3.0 },
-  39: { x: 7.0, y: 3.0 },
+  // 頂邊（右→左）
+  25: { x: 82.06, y: 7.78 },
+  26: { x: 75, y: 7.78 },
+  27: { x: 67.94, y: 7.78 },
+  28: { x: 60.88, y: 7.78 },
+  29: { x: 53.81, y: 7.78 },
+  30: { x: 46.75, y: 7.78 },
+  31: { x: 39.69, y: 7.78 },
+  32: { x: 32.63, y: 7.78 },
+  33: { x: 25.56, y: 7.78 },
+  37: { x: 18.5, y: 7.78 },
+  38: { x: 11.44, y: 7.78 },
+  39: { x: 4.38, y: 7.78 },
 
-  // Left Edge (x = 7, 14 staggered)
-  40: { x: 13.5, y: 17.5 },
-  41: { x: 7.0, y: 28.0 },
-  42: { x: 14.0, y: 40.0 },
-  43: { x: 7.0, y: 52.0 },
-  44: { x: 14.0, y: 64.0 },
-  45: { x: 7.0, y: 76.0 },
-  46: { x: 14.0, y: 84.5 },
+  // 左邊（上→下，之字交錯）
+  40: { x: 10.88, y: 21.11 },
+  41: { x: 4.38, y: 31.22 },
+  42: { x: 10.88, y: 41.33 },
+  43: { x: 4.38, y: 51.33 },
+  44: { x: 10.88, y: 61.44 },
+  45: { x: 4.38, y: 71.56 },
+  46: { x: 10.88, y: 78.44 },
 
-  // Inward Left Arm
-  48: { x: 22.0, y: 64.0 },
-  49: { x: 26.0, y: 48.0 },
-  50: { x: 33.0, y: 64.0 },
-  52: { x: 41.0, y: 50.0 },
+  // 下旋臂 5→6→7→8→55（向左掃入中心）
+  6: { x: 48.13, y: 78.89 },
+  7: { x: 38.75, y: 73.33 },
+  8: { x: 31.88, y: 60 },
+  55: { x: 40, y: 52.22 },
 
-  // Inward Right Arm
-  23: { x: 79.5, y: 28.0 },
-  21: { x: 72.5, y: 44.0 },
-  20: { x: 67.0, y: 30.0 },
-  19: { x: 60.0, y: 50.0 },
+  // 上旋臂 31→34→35→36→53（向右掃入中心）
+  34: { x: 51.88, y: 21.11 },
+  35: { x: 61.25, y: 26.67 },
+  36: { x: 68.13, y: 40 },
+  53: { x: 60, y: 47.78 },
 
-  // Inward Bottom Arm
-  6: { x: 60.0, y: 75.0 },
-  7: { x: 47.0, y: 75.0 },
-  8: { x: 67.0, y: 62.0 },
-  55: { x: 40.0, y: 64.0 },
+  // 左旋臂 44→48→49→50→52（向上掃入中心）
+  48: { x: 17.5, y: 52.22 },
+  49: { x: 22.5, y: 36.67 },
+  50: { x: 32.5, y: 33.33 },
+  52: { x: 41.25, y: 38.89 },
 
-  // Inward Top Arm
-  34: { x: 34.0, y: 31.0 },
-  35: { x: 57.0, y: 30.0 },
-  36: { x: 34.0, y: 45.0 },
-  53: { x: 48.0, y: 43.0 },
+  // 右旋臂 18→23→21→20→19（向下掃入中心）
+  23: { x: 81.25, y: 43.89 },
+  21: { x: 74.38, y: 56.67 },
+  20: { x: 67.5, y: 66.67 },
+  19: { x: 58.75, y: 61.11 },
 
-  // Central Hub Node
-  54: { x: 50.0, y: 58.0 }
+  // 中央樞紐
+  54: { x: 50, y: 50 }
 };
 
 export const Board: React.FC = () => {
@@ -136,9 +138,9 @@ export const Board: React.FC = () => {
       if (!canvasAreaRef.current) return;
       const width = canvasAreaRef.current.clientWidth;
       const height = canvasAreaRef.current.clientHeight;
-      // 設計稿固定尺寸為 1350x700，以此進行雙軸等比例適應縮放
-      const scaleX = width / 1350;
-      const scaleY = height / 700;
+      // 設計稿固定尺寸為 1600x900，以此進行雙軸等比例適應縮放
+      const scaleX = width / 1600;
+      const scaleY = height / 900;
       const newScale = Math.min(scaleX, scaleY);
       setScale(Math.max(0.3, newScale)); // 限制最小縮放比例，防止極端狀態
     };
@@ -296,10 +298,10 @@ export const Board: React.FC = () => {
   return (
     <div className={styles.boardWrapper}>
       {/* 配合下方控制台開展自適應縮放的地圖主要渲染區 */}
-      <div 
-        className={styles.canvasArea} 
+      <div
+        className={styles.canvasArea}
         ref={canvasAreaRef}
-        style={{ top: '84px', bottom: '12px' }}
+        style={{ top: 'calc(var(--hud-height, 106px) + 20px)', bottom: '12px' }}
       >
         <div 
           className={styles.gridContainer} 
@@ -404,7 +406,7 @@ export const Board: React.FC = () => {
                 style={{
                   left: `${coords.x}%`,
                   top: `${coords.y}%`,
-                  borderColor: playerColor,
+                  color: playerColor,
                   backgroundImage: 'url(/avatars.jpg)',
                   backgroundSize: '400% 400%',
                   backgroundPosition: `${x}% ${y}%`,

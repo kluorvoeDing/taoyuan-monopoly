@@ -3,36 +3,65 @@
   flex-direction: column;
   width: 100vw;
   height: 100vh;
-  background-color: #f1f5f9;
   position: relative;
   overflow: hidden;
+  /* 暖紙基底 + 陶土/青瓷微光暈染，營造桌遊紙圖質感 */
+  background-color: #F5F1EA;
+  background-image:
+    radial-gradient(1100px 620px at 12% -8%, rgba(194, 65, 12, 0.06), transparent 62%),
+    radial-gradient(1000px 640px at 92% 108%, rgba(15, 118, 110, 0.06), transparent 60%),
+    radial-gradient(rgba(30, 30, 36, 0.055) 1px, transparent 1.2px);
+  background-size: auto, auto, 26px 26px;
 }
 
 .canvasArea {
   position: absolute;
-  top: 0;
   left: 0;
   right: 0;
-  /* bottom will be set inline dynamically: 52px or 310px */
+  /* top 由 Board.tsx 依 HUD 實際高度 (--hud-height) 動態保留，確保任何狀態都不遮擋棋盤 */
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
-  transition: bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: top 0.25s cubic-bezier(0.4, 0, 0.2, 1), bottom 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   box-sizing: border-box;
 }
 
 .gridContainer {
   position: relative;
-  width: 1350px;
-  height: 700px;
+  width: 1600px;
+  height: 900px;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.05);
   transform-origin: center center;
   box-sizing: border-box;
+}
+
+/* 中央樞紐羅盤裝飾：兩圈同心圓 + 十字微標，強化「風車星圖」的視覺錨點 */
+.gridContainer::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 560px;
+  height: 560px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1.5px dashed rgba(194, 65, 12, 0.10);
+  box-shadow: inset 0 0 0 60px rgba(255, 255, 255, 0.0), 0 0 0 110px rgba(194, 65, 12, 0.018);
+  pointer-events: none;
+}
+
+.gridContainer::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 330px;
+  height: 330px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(194, 65, 12, 0.10);
+  pointer-events: none;
 }
 
 .svgCanvas {
@@ -46,22 +75,24 @@
 }
 
 .copperLine {
-  stroke: rgba(148, 163, 184, 0.38);
-  stroke-width: 2px;
-  transition: all var(--transition-normal, 0.2s);
+  stroke: rgba(120, 113, 108, 0.34);
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+  stroke-dasharray: 1 9;
+  transition: stroke var(--transition-normal, 0.25s);
 }
 
 .copperLineActive {
-  stroke: var(--primary, #F97316);
+  stroke: var(--primary);
   stroke-width: 4px;
-  stroke-dasharray: 6 4;
+  stroke-dasharray: 8 6;
   animation: dashScroll 0.8s infinite linear;
-  filter: drop-shadow(0 0 3px var(--primary, #F97316));
+  filter: drop-shadow(0 0 4px var(--primary-glow-strong, rgba(194, 65, 12, 0.45)));
 }
 
 @keyframes dashScroll {
   from {
-    stroke-dashoffset: 20;
+    stroke-dashoffset: 28;
   }
   to {
     stroke-dashoffset: 0;
@@ -70,11 +101,12 @@
 
 .boardPlayerToken {
   position: absolute;
-  width: 22px;
-  height: 22px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  border: 2px solid #ffffff;
-  box-shadow: 0 2.5px 8px rgba(0, 0, 0, 0.24);
+  border: 2.5px solid #ffffff;
+  outline: 2.5px solid currentColor;
+  box-shadow: 0 4px 10px rgba(30, 30, 36, 0.28);
   z-index: 20;
   background-repeat: no-repeat;
   transform: translate(-50%, -50%);

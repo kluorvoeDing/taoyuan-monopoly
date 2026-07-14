@@ -1,13 +1,14 @@
+/* 六角形據點卡片：96x108（與 scripts/board-layout.mjs 的 TILE_W/TILE_H 同步，改尺寸需重跑佈局驗證） */
 .tile {
-  background: #ffffff;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FBF9F5 100%);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 4px 8px 4px;
+  padding: 13px 5px 11px 5px;
   position: relative;
-  width: 82px;
-  height: 92px;
+  width: 96px;
+  height: 108px;
   clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
   cursor: pointer;
   user-select: none;
@@ -18,24 +19,24 @@
 }
 
 .tile:hover {
-  background: rgba(255, 255, 255, 0.95);
+  background: #FFFFFF;
 }
 
 .selected {
-  background: rgba(255, 255, 255, 0.95);
+  background: #FFFFFF;
 }
 
-/* Node ID badge - colored capsule in the top triangular area */
+/* 據點編號膠囊（底色為行政區代表色） */
 .tileId {
   font-family: var(--font-mono, monospace);
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 800;
-  padding: 1px 6px;
-  border-radius: 8px;
+  padding: 1px 7px;
+  border-radius: 9px;
   color: #fff;
   background: #64748b;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  margin-top: 1px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.02em;
 }
 
 .infoRow {
@@ -43,87 +44,113 @@
   justify-content: center;
   align-items: center;
   width: 100%;
+  flex-shrink: 0;
 }
 
 .tierBadge {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 1px 2.5px;
-  border-radius: 2px;
-  font-weight: bold;
-  font-size: 8.5px;
+  top: 25px;
+  right: 8px;
+  padding: 1.5px 4px;
+  border-radius: 4px;
+  font-weight: 800;
+  font-size: 9px;
   line-height: 1;
 }
 
-.tierS { background: rgba(239, 68, 68, 0.12); color: #EF4444; border: 1px solid rgba(239, 68, 68, 0.2); }
-.tierA { background: rgba(245, 158, 11, 0.12); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.2); }
-.tierB { background: rgba(16, 185, 129, 0.12); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2); }
-.tierC { background: rgba(59, 130, 246, 0.12); color: #3B82F6; border: 1px solid rgba(59, 130, 246, 0.2); }
+.tierS { background: rgba(239, 68, 68, 0.12); color: #DC2626; border: 1px solid rgba(239, 68, 68, 0.25); }
+.tierA { background: rgba(217, 119, 6, 0.12); color: #D97706; border: 1px solid rgba(217, 119, 6, 0.25); }
+.tierB { background: rgba(5, 150, 105, 0.12); color: #059669; border: 1px solid rgba(5, 150, 105, 0.25); }
+.tierC { background: rgba(37, 99, 235, 0.12); color: #2563EB; border: 1px solid rgba(37, 99, 235, 0.25); }
 
+/* 據點名稱：最多兩行完整顯示，不再硬截斷 */
 .name {
   font-weight: 800;
   color: var(--text-primary);
-  white-space: nowrap;
+  font-size: 11.5px;
+  line-height: 1.25;
+  width: 88px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
-  margin: 1px 0;
+  z-index: 2;
+  letter-spacing: 0.01em;
+}
+
+/* 地價 / 等級列 */
+.valueRow {
   font-size: 10.5px;
-  width: 68px;
+  color: var(--text-secondary);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: center;
   z-index: 2;
+  font-family: var(--font-mono, monospace);
+  flex-shrink: 0;
 }
 
-/* Category or Type tags */
+.levelIcon {
+  font-size: 13px;
+  font-family: var(--font-sans);
+}
+
+/* 特殊格類型標籤 */
 .specialBadge {
-  font-size: 9.5px;
+  font-size: 10px;
   font-weight: 800;
-  padding: 1px 4px;
-  border-radius: 3px;
-  margin-bottom: 4px;
+  padding: 2px 8px;
+  border-radius: 5px;
+  margin-bottom: 2px;
   z-index: 2;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
 }
 
-.badge_start { background: rgba(16, 185, 129, 0.12); color: #10B981; border: 1px solid rgba(16, 185, 129, 0.2); }
-.badge_card { background: rgba(59, 130, 246, 0.12); color: #3B82F6; border: 1px solid rgba(59, 130, 246, 0.2); }
-.badge_fate { background: rgba(245, 158, 11, 0.12); color: #F59E0B; border: 1px solid rgba(245, 158, 11, 0.2); }
-.badge_traffic { background: rgba(224, 122, 95, 0.12); color: #E07A5F; border: 1px solid rgba(224, 122, 95, 0.2); }
-.badge_lottery { background: rgba(159, 146, 236, 0.12); color: #9F92EC; border: 1px solid rgba(159, 146, 236, 0.2); }
-.badge_empty { background: rgba(148, 163, 184, 0.12); color: #64748b; border: 1px solid rgba(148, 163, 184, 0.2); }
+.badge_start { background: rgba(16, 185, 129, 0.12); color: #059669; border: 1px solid rgba(16, 185, 129, 0.25); }
+.badge_card { background: rgba(59, 130, 246, 0.12); color: #2563EB; border: 1px solid rgba(59, 130, 246, 0.25); }
+.badge_fate { background: rgba(245, 158, 11, 0.14); color: #B45309; border: 1px solid rgba(245, 158, 11, 0.28); }
+.badge_traffic { background: rgba(224, 122, 95, 0.13); color: #C2410C; border: 1px solid rgba(224, 122, 95, 0.28); }
+.badge_lottery { background: rgba(139, 122, 236, 0.13); color: #6D5BD0; border: 1px solid rgba(139, 122, 236, 0.28); }
+.badge_empty { background: rgba(120, 113, 108, 0.10); color: #78716C; border: 1px solid rgba(120, 113, 108, 0.22); }
 
-/* Status icons inside hexagon */
+/* 攻防狀態圖示（六角形左上斜肩內側） */
 .statusContainer {
   display: flex;
   gap: 1.5px;
   justify-content: center;
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 25px;
+  left: 8px;
   z-index: 2;
 }
 
 .statusGuard, .statusDisrupt, .statusDisabled, .statusBoost, .statusRoadblock {
-  font-size: 9.5px;
+  font-size: 10px;
   cursor: help;
 }
 
-/* Raider Spawn tag */
+/* 亂入敵人標籤 */
 .raidOverlay {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(239, 68, 68, 0.95);
+  background: rgba(220, 38, 38, 0.95);
   color: #fff;
   font-weight: 800;
-  font-size: 9.5px;
-  padding: 2px 4px;
-  border-radius: 2px;
+  font-size: 10px;
+  padding: 3px 6px;
+  border-radius: 4px;
   white-space: nowrap;
-  box-shadow: 0 1px 5px rgba(239, 68, 68, 0.3);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
   z-index: 5;
+  letter-spacing: 0.04em;
 }
 
-/* Overlapping Avatars */
+/* （保留：格內玩家頭像疊排，目前由棋盤層渲染棋子） */
 .playersContainer {
   display: flex;
   justify-content: center;
@@ -147,11 +174,6 @@
   background-repeat: no-repeat;
   margin: 0 -2px;
   flex-shrink: 0;
-}
-
-.playerToken:hover {
-  transform: scale(1.2) translateY(-1px);
-  z-index: 10;
 }
 
 .validTarget {

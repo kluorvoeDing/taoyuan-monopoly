@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { getTileConfig, calculatePurchasePrice, calculateUpgradeCost, calculateNetWorth, calculateRent } from '../../game/engine/selectors';
 import { CHARACTERS } from '../../data/characters';
@@ -122,7 +122,22 @@ export const CenterDashboard: React.FC = () => {
   const [showHandCards, setShowHandCards] = useState<boolean>(false);
   const [selectedProfilePlayerId, setSelectedProfilePlayerId] = useState<string | null>(null);
 
-
+  // 即時量測 HUD 高度寫入 --hud-height，讓棋盤畫布動態保留頂部空間（折疊情報列絕不遮擋棋盤）。
+  // 用 callback ref：HUD 在 state 就緒後才掛載，掛載當下即建立 ResizeObserver。
+  const hudObserverRef = useRef<ResizeObserver | null>(null);
+  const hudRef = React.useCallback((el: HTMLDivElement | null) => {
+    hudObserverRef.current?.disconnect();
+    hudObserverRef.current = null;
+    if (!el) return;
+    const syncHudHeight = () => {
+      // HUD 為 fixed top:12px，因此保留高度 = 12px + 面板實際高度
+      document.documentElement.style.setProperty('--hud-height', `${12 + el.offsetHeight}px`);
+    };
+    syncHudHeight();
+    const observer = new ResizeObserver(syncHudHeight);
+    observer.observe(el);
+    hudObserverRef.current = observer;
+  }, []);
 
   // 數位骰子滾動動畫狀態
   const [localDiceRolling, setLocalDiceRolling] = useState(false);
@@ -508,7 +523,7 @@ export const CenterDashboard: React.FC = () => {
   return (
     <>
       {/* 頂部常駐 HUD 行動指揮面板 */}
-      <div className={styles.hudContainer}>
+      <div className={styles.hudContainer} ref={hudRef}>
         {/* 主要 HUD 單排呈現 */}
         <div className={styles.mainRow}>
           {/* 1. 左側：4 人玩家狀態橫排看板 */}
@@ -835,7 +850,7 @@ export const CenterDashboard: React.FC = () => {
             <span className={styles.tickerLabel}>📢 最新情報:</span>
             <span className={styles.tickerText}>{formatLogMessage(latestLog)}</span>
           </div>
-          <span className={styles.tickerArrow}>{logsCollapsed ? '展開 ▲' : '收合 ▼'}</span>
+          <span className={styles.tickerArrow}>{logsCollapsed ? '展開 ▼' : '收合 ▲'}</span>
         </div>
 
         {/* 5. 下拉展開的霧面玻璃即時事件通訊 */}
