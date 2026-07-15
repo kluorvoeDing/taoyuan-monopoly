@@ -115,6 +115,7 @@
 .badge_traffic { background: rgba(224, 122, 95, 0.13); color: #C2410C; border: 1px solid rgba(224, 122, 95, 0.28); }
 .badge_lottery { background: rgba(139, 122, 236, 0.13); color: #6D5BD0; border: 1px solid rgba(139, 122, 236, 0.28); }
 .badge_empty { background: rgba(120, 113, 108, 0.10); color: #78716C; border: 1px solid rgba(120, 113, 108, 0.22); }
+.badge_shop { background: rgba(13, 148, 136, 0.12); color: #0F766E; border: 1px solid rgba(13, 148, 136, 0.25); }
 
 /* 攻防狀態圖示（六角形左上斜肩內側） */
 .statusContainer {

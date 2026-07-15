@@ -47,6 +47,7 @@ export const Tile = React.memo<TileProps>(({
     if (type === 'traffic') return '交通';
     if (type === 'lottery') return '基金';
     if (type === 'empty') return '公園';
+    if (type === 'shop') return '商店';
     return '';
   };
 

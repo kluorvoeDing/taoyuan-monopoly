@@ -238,6 +238,27 @@ export const CenterDashboard: React.FC = () => {
     }
   }, [state]);
 
+  const lastAutoShopRef = useRef<{ playerId: string; position: number; round: number } | null>(null);
+
+  // 抵達商店自動彈出
+  useEffect(() => {
+    if (!state) return;
+    const activePlayer = state.players.find(p => p.id === state.activePlayerId);
+    if (!activePlayer || activePlayer.control !== 'human') return;
+
+    const tileConfig = getTileConfig(activePlayer.position);
+    if (tileConfig.type === 'shop' && state.phase === 'action') {
+      const alreadyOpened = lastAutoShopRef.current && 
+                            lastAutoShopRef.current.playerId === activePlayer.id && 
+                            lastAutoShopRef.current.position === activePlayer.position && 
+                            lastAutoShopRef.current.round === state.round;
+      if (!alreadyOpened) {
+        lastAutoShopRef.current = { playerId: activePlayer.id, position: activePlayer.position, round: state.round };
+        setShowShopModal(true);
+      }
+    }
+  }, [state?.activePlayerId, state?.phase, state?.round]);
+
   if (!state) return null;
 
   const activePlayer = state.players.find(p => p.id === state.activePlayerId)!;
@@ -890,7 +911,7 @@ export const CenterDashboard: React.FC = () => {
 
                   <button 
                     className={styles.btnAction}
-                    disabled={state.phase !== 'action' || !isHumanTurn}
+                    disabled={state.phase !== 'action' || !isHumanTurn || getTileConfig(activePlayer.position).type !== 'shop'}
                     onClick={() => {
                       setShowShopModal(!showShopModal);
                       setShowHandCards(false);
@@ -952,7 +973,16 @@ export const CenterDashboard: React.FC = () => {
                   <div className={styles.floatingHand} style={{ maxHeight: '280px', overflowY: 'auto' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '6px' }}>
                       <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)' }}>🛒 支援道具商店</span>
-                      <span style={{ fontSize: '9px', color: 'var(--text-secondary)' }}>手牌：{activePlayer.cards.length} / 5</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '9px', color: 'var(--text-secondary)' }}>手牌：{activePlayer.cards.length} / 5</span>
+                        <button 
+                          onClick={() => setShowShopModal(false)}
+                          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 'bold', padding: '0 4px' }}
+                          title="關閉商店"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       {CARDS.map(card => {

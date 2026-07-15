@@ -895,6 +895,10 @@ export function gameReducer(state: GameState | null, command: GameCommand): Comm
     if (!player || player.isBankrupt) {
       return { state, events, error: '玩家無效或已停業' };
     }
+    const currentTile = getTileConfig(player.position);
+    if (currentTile.type !== 'shop') {
+      return { state, events, error: '必須停留在裝備商店才能購買道具卡片' };
+    }
     if (player.cards.length >= 5) {
       return { state, events, error: '手牌已達上限 (5 張)，無法購買道具' };
     }
@@ -1242,6 +1246,48 @@ function handleLanding(
           nextState = recurResult.state;
           events = [...events, ...recurResult.events];
         }
+      }
+      break;
+    }
+
+    case 'shop': {
+      events.push({
+        type: 'SHOP_LAND',
+        playerId,
+        message: `🛒 ${player.name} 抵達了裝備商店【${config.name}】，可以開始採購道具卡片！`
+      });
+
+      if (player.control === 'ai') {
+        // AI 自動採購道具
+        const rng = new SeedableRNG(nextState.rngState || 'default');
+        // AI 有 60% 機率採購，且手牌小於 5
+        if (rng.range(1, 100) <= 60 && player.cards.length < 5) {
+          // 篩選買得起的卡片
+          const affordableCards = CARDS.filter(c => player.cash >= CARD_PRICES[c.id]);
+          if (affordableCards.length > 0) {
+            // 隨機選一張
+            const cardToBuy = affordableCards[rng.range(0, affordableCards.length - 1)];
+            const price = CARD_PRICES[cardToBuy.id];
+            nextState.players = nextState.players.map(p => {
+              if (p.id === playerId) {
+                return {
+                  ...p,
+                  cash: p.cash - price,
+                  cards: [...p.cards, cardToBuy.id]
+                };
+              }
+              return p;
+            });
+            events.push({
+              type: 'CARD_PURCHASE',
+              playerId,
+              cardId: cardToBuy.id,
+              amount: price,
+              message: `🛒 ${player.name} (AI) 支付了 ${price.toLocaleString("zh-Hant-TW")}，在商店購買了道具【${cardToBuy.name}】！`
+            });
+          }
+        }
+        nextState.rngState = rng.getStateString();
       }
       break;
     }

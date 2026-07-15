@@ -2,7 +2,7 @@ export interface TileConfig {
   id: number;
   name: string;
   subtitle: string;
-  type: 'start' | 'land' | 'card' | 'fate' | 'traffic' | 'lottery' | 'empty';
+  type: 'start' | 'land' | 'card' | 'fate' | 'traffic' | 'lottery' | 'empty' | 'shop';
   district?: string; // 區行政名，如 '桃園區'
   zone?: string; // 策略區域 ID，如 'taoyuan_core'
   tier?: 'S' | 'A' | 'B' | 'C'; // 土地級別
@@ -21,7 +21,7 @@ export const TILES: TileConfig[] = [
   { id: 7, name: "藝文特區", subtitle: "市民救援示範區", type: "land", district: "桃園區", zone: "arts_admin", tier: "S" },
   { id: 8, name: "中路重劃", subtitle: "新興事務所區", type: "land", district: "桃園區", zone: "arts_admin", tier: "A" },
   { id: 9, name: "市府周邊", subtitle: "行政支援節點", type: "land", district: "桃園區", zone: "arts_admin", tier: "A" },
-  { id: 10, name: "慈文市民廣場", subtitle: "桃園公有廣場", type: "empty" },
+  { id: 10, name: "市民裝備商店", subtitle: "購買卡片道具", type: "shop" },
   { id: 11, name: "支援基金", subtitle: "城市基金抽選", type: "lottery" },
   { id: 12, name: "南崁", subtitle: "通勤熱區巡邏點", type: "land", district: "蘆竹區", zone: "luzhu_airport", tier: "A" },
   { id: 13, name: "大竹", subtitle: "住宅防災據點", type: "land", district: "蘆竹區", zone: "luzhu_airport", tier: "B" },
@@ -49,7 +49,7 @@ export const TILES: TileConfig[] = [
   { id: 32, name: "支援基金", subtitle: "城市基金抽選", type: "lottery" },
   { id: 33, name: "平鎮公所", subtitle: "行政支援據點", type: "land", district: "平鎮區", zone: "pingzhen_industry", tier: "B" },
   { id: 34, name: "山仔頂", subtitle: "工業區警戒點", type: "land", district: "平鎮區", zone: "pingzhen_industry", tier: "C" },
-  { id: 35, name: "新勢生態公園", subtitle: "公共避難綠地", type: "empty" },
+  { id: 35, name: "新勢裝備商店", subtitle: "購買卡片道具", type: "shop" },
 
   { id: 36, name: "支援站", subtitle: "抽取支援裝備", type: "card" },
   { id: 37, name: "龍潭市區", subtitle: "山區救援據點", type: "land", district: "龍潭區", zone: "mountain_south", tier: "C" },
