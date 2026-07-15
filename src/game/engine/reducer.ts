@@ -135,7 +135,8 @@ export function simulatePath(
   rng: any,
   nextHeadingNode?: number,
   graph: Record<number, number[]> = GRAPH_CONNECTIONS,
-  tilesState?: TileState[]
+  tilesState?: TileState[],
+  bypassRoadblock?: boolean
 ): { path: number[]; crossedStart: boolean } {
   const path: number[] = [startNode];
   let current = startNode;
@@ -168,11 +169,13 @@ export function simulatePath(
     prev = current;
     current = nextNode;
 
-    // 路障檢測：如果路經此格有路障，強迫在此格停下
+    // 路障檢測：如果路經此格有路障，強迫在此格停下 (除非擁有蛙吹梅雨被動並成功觸發跳過)
     if (tilesState) {
       const tState = tilesState.find(t => t.id === nextNode);
       if (tState && tState.statuses.hasRoadblock) {
-        break;
+        if (!bypassRoadblock) {
+          break;
+        }
       }
     }
   }
@@ -290,6 +293,42 @@ export function ensureRaidSpawns(state: GameState, events: DomainEvent[]): GameS
   }
 
   nextState.raidSpawns = spawns;
+  nextState.rngState = rng.getStateString();
+  return nextState;
+}
+
+// 💀 死柄木弔被動技能：進駐或升級據點後，相鄰對手據點有 15% 機率下降 1 級
+function triggerShigarakiPassive(
+  state: GameState,
+  playerId: string,
+  tileId: number,
+  events: DomainEvent[]
+): GameState {
+  let nextState = { ...state };
+  const player = nextState.players.find(p => p.id === playerId);
+  if (!player || player.characterId !== 'shigaraki') return nextState;
+
+  const neighbors = GRAPH_CONNECTIONS[tileId] || [];
+  let rng = new SeedableRNG(nextState.rngState || 'default');
+
+  nextState.tiles = nextState.tiles.map(t => {
+    if (neighbors.includes(t.id) && t.ownerId && t.ownerId !== playerId && t.level > 1) {
+      const isLucky = rng.range(1, 100) <= 15; // 15% 機率觸發
+      if (isLucky) {
+        const opponent = nextState.players.find(p => p.id === t.ownerId)!;
+        const config = getTileConfig(t.id);
+        const nextLevel = t.level - 1;
+        events.push({
+          type: 'TILE_STATUS_EXPIRED',
+          tileId: t.id,
+          message: `💀 死柄木弔啟動被動「崩壞」！相鄰對手 ${opponent.name} 的據點【${config.name}】結構瓦解，等級下降至 Level ${nextLevel}！`
+        });
+        return { ...t, level: nextLevel as any };
+      }
+    }
+    return t;
+  });
+
   nextState.rngState = rng.getStateString();
   return nextState;
 }
@@ -529,6 +568,9 @@ export function gameReducer(state: GameState | null, command: GameCommand): Comm
       headingNode = validDirs[idx];
     }
 
+    const isFroppy = activePlayer.characterId === 'froppy';
+    const bypassRoadblock = isFroppy && rng.range(1, 100) <= 50;
+
     const { path, crossedStart } = simulatePath(
       activePlayer.position,
       activePlayer.lastPosition,
@@ -536,8 +578,28 @@ export function gameReducer(state: GameState | null, command: GameCommand): Comm
       rng,
       headingNode,
       GRAPH_CONNECTIONS,
-      nextState.tiles
+      nextState.tiles,
+      bypassRoadblock
     );
+
+    if (isFroppy && bypassRoadblock) {
+      // 檢查是否中途有路障被跳過 (不含起點和終點)
+      let bypassed = false;
+      for (let idx = 1; idx < path.length; idx++) {
+        const node = path[idx];
+        const tState = nextState.tiles.find(t => t.id === node);
+        if (tState && tState.statuses.hasRoadblock && idx < path.length - 1) {
+          bypassed = true;
+        }
+      }
+      if (bypassed) {
+        events.push({
+          type: 'EVENT',
+          playerId: activePlayer.id,
+          message: `🐸 蛙吹梅雨啟動被動「蛙」，以 50% 概率成功跳過路障，未受攔截！`
+        });
+      }
+    }
 
     const targetDest = path[path.length - 1];
     const prevPos = path.length >= 2 ? path[path.length - 2] : activePlayer.lastPosition;
@@ -723,6 +785,9 @@ export function gameReducer(state: GameState | null, command: GameCommand): Comm
       message: `🏢 ${activePlayer.name} 正式進駐據點 ${config.name}（等級 1 / 臨時據點）。`
     });
 
+    // 💀 死柄木弔被動：進駐據點觸發崩壞
+    nextState = triggerShigarakiPassive(nextState, activePlayer.id, activePlayer.position, events);
+
     // 檢查是否完成套裝 ( district completion )
     if (config.zone) {
       const progress = getZoneProgress(nextState, activePlayer.id, config.zone);
@@ -810,6 +875,9 @@ export function gameReducer(state: GameState | null, command: GameCommand): Comm
       message: `🧱 ${activePlayer.name} 將據點 ${config.name} 擴建升級至 Level ${nextLevel}（${LEVEL_NAMES[nextLevel]}）。`
     });
 
+    // 💀 死柄木弔被動：升級據點觸發崩壞
+    nextState = triggerShigarakiPassive(nextState, activePlayer.id, activePlayer.position, events);
+
     return {
       state: nextState,
       events
@@ -864,35 +932,53 @@ export function gameReducer(state: GameState | null, command: GameCommand): Comm
     // 檢查下一位玩家是否被停回合 (skipNextTurn)
     const isFrozen = nextPlayer.statusEffects.some(e => e.kind === 'skipNextTurn');
     if (nextState.mode !== 'finished' && isFrozen) {
-      events.push({
-        type: 'PLAYER_FROZEN_TURN',
-        playerId: nextPlayer.id,
-        message: `🥶 輪到 ${nextPlayer.name}，但其處於冰封/捕縛狀態！跳過本次移動與地產操作，只觸發當前所在格。`
-      });
+      if (nextPlayer.characterId === 'eraser_head') {
+        // 抹消被動：免疫停行
+        nextState.players = nextState.players.map(p => {
+          if (p.id === nextPlayer.id) {
+            return {
+              ...p,
+              statusEffects: p.statusEffects.filter(e => e.kind !== 'skipNextTurn')
+            };
+          }
+          return p;
+        });
+        events.push({
+          type: 'EVENT',
+          playerId: nextPlayer.id,
+          message: `👁️ 相澤消太啟動被動「抹消」，直接無視並消除了停步限制！`
+        });
+      } else {
+        events.push({
+          type: 'PLAYER_FROZEN_TURN',
+          playerId: nextPlayer.id,
+          message: `🥶 輪到 ${nextPlayer.name}，但其處於冰封/捕縛狀態！跳過本次移動與地產操作，只觸發當前所在格。`
+        });
 
-      // 1. 移除該 skipNextTurn 效果
-      nextState.players = nextState.players.map(p => {
-        if (p.id === nextPlayer.id) {
-          return {
-            ...p,
-            statusEffects: p.statusEffects.filter(e => e.kind !== 'skipNextTurn')
-          };
-        }
-        return p;
-      });
+        // 1. 移除該 skipNextTurn 效果
+        nextState.players = nextState.players.map(p => {
+          if (p.id === nextPlayer.id) {
+            return {
+              ...p,
+              statusEffects: p.statusEffects.filter(e => e.kind !== 'skipNextTurn')
+            };
+          }
+          return p;
+        });
 
-      // 2. 再次觸發當前格子效果
-      nextState.phase = 'resolvingEffect';
-      const landResult = handleLanding(nextState, nextPlayer.id, events);
-      nextState = landResult.state;
-      events = [...events, ...landResult.events];
+        // 2. 再次觸發當前格子效果
+        nextState.phase = 'resolvingEffect';
+        const landResult = handleLanding(nextState, nextPlayer.id, events);
+        nextState = landResult.state;
+        events = [...events, ...landResult.events];
 
-      // 3. 處理完畢，玩家本回合不得移動或買地，再次自動結算回合
-      // 為了防範遞迴失控，我們直接利用 endTurn 切換至下個玩家
-      const recurResult = endTurn(nextState);
-      nextState = recurResult.state;
-      events = [...events, ...recurResult.events];
-      nextState = checkGameOver(nextState, events);
+        // 3. 處理完畢，玩家本回合不得移動或買地，再次自動結算回合
+        // 為了防範遞迴失控，我們直接利用 endTurn 切換至下個玩家
+        const recurResult = endTurn(nextState);
+        nextState = recurResult.state;
+        events = [...events, ...recurResult.events];
+        nextState = checkGameOver(nextState, events);
+      }
     }
 
     return {
@@ -1072,6 +1158,18 @@ function handleLanding(
         const payResult = payCash(nextState, playerId, fee, `支付 ${config.name} 交通費`);
         nextState = payResult.state;
         events = [...events, ...payResult.events];
+
+        // 上鳴電氣被動：抵達交通格額外獲得 500 發電補助
+        if (player.characterId === 'chargebolt') {
+          const giveResult = giveCash(nextState, playerId, 500, '帶電被動發電補助');
+          nextState = giveResult.state;
+          events = [...events, ...giveResult.events];
+          events.push({
+            type: 'EVENT',
+            playerId,
+            message: `⚡ 上鳴電氣啟動帶電被動！獲得 500 發電補助。`
+          });
+        }
 
         // 飯田天哉被動：抵達交通格後額外前進 2 格，且觸發新格
         const updatedPlayer = nextState.players.find(p => p.id === playerId)!;

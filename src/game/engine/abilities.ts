@@ -1,7 +1,8 @@
 import type { GameState, DomainEvent } from '../types';
 import { payCash } from './economy';
 import { getTileConfig } from './selectors';
-import { drawCard } from './cards'; // 雖然 drawCard 是卡片內的輔助，但我們可以共用抽卡
+import { drawCard, getNodesWithinRange } from './cards';
+import { GRAPH_CONNECTIONS } from './reducer';
 
 // 檢查角色個性主動能力是否可使用（CD 是否為 0，資金是否足夠）
 export function canUseAbility(state: GameState, playerId: string): { canUse: boolean; error?: string } {
@@ -21,11 +22,24 @@ export function canUseAbility(state: GameState, playerId: string): { canUse: boo
     return { canUse: false, error: `個性能力冷卻中，還需等待 ${currentCD} 回合` };
   }
 
+  // 檢查是否被抹消封印
+  if (player.statusEffects.some(e => e.kind === 'abilitySealed')) {
+    return { canUse: false, error: '你的個性主動能力目前正處於「被抹消封印」狀態，無法使用！' };
+  }
+
   // 檢查成本
   let cost = 0;
   if (charId === 'bill_rice') cost = 800; // 綠谷全覆蓋衝刺 800
   if (charId === 'musk_bite') cost = 600; // 飯田互聯爆發 600
   if (charId === 'jay_turn') cost = 600;  // 八百萬道具創造 600
+  if (charId === 'all_might') cost = 1000;
+  if (charId === 'eraser_head') cost = 500;
+  if (charId === 'froppy') cost = 400;
+  if (charId === 'tsukuyomi') cost = 500;
+  if (charId === 'chargebolt') cost = 600;
+  if (charId === 'earphone_jack') cost = 400;
+  if (charId === 'shigaraki') cost = 800;
+  if (charId === 'dabi') cost = 500;
 
   if (player.cash < cost) {
     return { canUse: false, error: `支援預算不足，無法支付個性成本 ${cost.toLocaleString("zh-Hant-TW")}` };
@@ -55,6 +69,14 @@ export function applyAbility(
   if (charId === 'bill_rice') cost = 800;
   if (charId === 'musk_bite') cost = 600;
   if (charId === 'jay_turn') cost = 600;
+  if (charId === 'all_might') cost = 1000;
+  if (charId === 'eraser_head') cost = 500;
+  if (charId === 'froppy') cost = 400;
+  if (charId === 'tsukuyomi') cost = 500;
+  if (charId === 'chargebolt') cost = 600;
+  if (charId === 'earphone_jack') cost = 400;
+  if (charId === 'shigaraki') cost = 800;
+  if (charId === 'dabi') cost = 500;
 
   if (cost > 0) {
     const payResult = payCash(nextState, playerId, cost, `個性「${getAbilityName(charId)}」成本`);
@@ -281,6 +303,237 @@ export function applyAbility(
       break;
     }
 
+    case 'all_might': {
+      nextState.players = nextState.players.map(p => {
+        if (p.id === playerId) {
+          return {
+            ...p,
+            statusEffects: [...p.statusEffects, { name: '德州粉碎免稅', duration: 99, kind: 'rentPayDiscount', value: 1.0 }],
+            cooldowns: { ...p.cooldowns, [charId]: 6 } // CD = 6
+          };
+        }
+        return p;
+      });
+      events.push({
+        type: 'ABILITY_USE',
+        playerId,
+        abilityId: charId,
+        message: `✨ ${player.name} 發動個性「德州粉碎」，消耗 1,000，免除下一次抵達他人據點時的全部支援費！`
+      });
+      break;
+    }
+
+    case 'eraser_head': {
+      const targetPlayerId = payload?.targetPlayerId;
+      if (!targetPlayerId || targetPlayerId === playerId) {
+        return { state, events: [], error: '必須選擇其他仍在遊戲中的玩家為目標' };
+      }
+      const target = nextState.players.find(p => p.id === targetPlayerId);
+      if (!target || target.isBankrupt) {
+        return { state, events: [], error: '目標玩家無效或已停業' };
+      }
+      nextState.players = nextState.players.map(p => {
+        if (p.id === playerId) {
+          return { ...p, cooldowns: { ...p.cooldowns, [charId]: 5 } }; // CD = 5
+        }
+        if (p.id === targetPlayerId) {
+          return {
+            ...p,
+            statusEffects: [
+              ...p.statusEffects,
+              { name: '抹消封印技能', duration: 2, kind: 'abilitySealed', value: 1 },
+              { name: '抹消封印卡片', duration: 2, kind: 'cardsSealed', value: 1 }
+            ]
+          };
+        }
+        return p;
+      });
+      events.push({
+        type: 'ABILITY_USE',
+        playerId,
+        abilityId: charId,
+        message: `👁️ ${player.name} 發動個性「抹消視線」，消耗 500，封印對手 ${target.name} 的主動技能與卡牌使用，持續 2 回合！`
+      });
+      break;
+    }
+
+    case 'froppy': {
+      const steps = Number(payload?.steps);
+      if (steps !== 2 && steps !== 3) {
+        return { state, events: [], error: '跳躍移動步數必須為 2 或 3' };
+      }
+      nextState.players = nextState.players.map(p => {
+        if (p.id === playerId) {
+          return {
+            ...p,
+            statusEffects: [...p.statusEffects, { name: '蛙類跳躍', duration: 1, kind: 'nextDice', value: steps }],
+            cooldowns: { ...p.cooldowns, [charId]: 4 } // CD = 4
+          };
+        }
+        return p;
+      });
+      events.push({
+        type: 'ABILITY_USE',
+        playerId,
+        abilityId: charId,
+        message: `🐸 ${player.name} 發動個性「蛙類跳躍」，消耗 400，指定下一次擲骰移動直接前進 ${steps} 格！`
+      });
+      break;
+    }
+
+    case 'tsukuyomi': {
+      const targetTileId = Number(payload?.targetTileId);
+      if (targetTileId === undefined || isNaN(targetTileId)) {
+        return { state, events: [], error: '未指定停擺的據點目標' };
+      }
+      const validTiles = getNodesWithinRange(player.position, 3, GRAPH_CONNECTIONS);
+      if (!validTiles.includes(targetTileId)) {
+        return { state, events: [], error: '停擺目標必須在周圍 3 格範圍內' };
+      }
+      const targetTile = nextState.tiles.find(t => t.id === targetTileId);
+      if (!targetTile || !targetTile.ownerId) {
+        return { state, events: [], error: '只能使有主的對手或自己據點停擺' };
+      }
+      const config = getTileConfig(targetTileId);
+      nextState.tiles = nextState.tiles.map(t => {
+        if (t.id === targetTileId) {
+          return { ...t, statuses: { ...t.statuses, rentDisabledOnce: true } };
+        }
+        return t;
+      });
+      nextState.players = nextState.players.map(p => {
+        if (p.id === playerId) {
+          return { ...p, cooldowns: { ...p.cooldowns, [charId]: 5 } }; // CD = 5
+        }
+        return p;
+      });
+      events.push({
+        type: 'ABILITY_USE',
+        playerId,
+        abilityId: charId,
+        message: `🌙 ${player.name} 發動個性「深淵暗軀」，消耗 500，使據點【${config.name}】陷入黑暗，停擺 1 回合！`
+      });
+      break;
+    }
+
+    case 'chargebolt': {
+      nextState.players = nextState.players.map(p => {
+        if (p.id === playerId) {
+          return {
+            ...p,
+            statusEffects: [...p.statusEffects, { name: '放電後副作用', duration: 1, kind: 'cardsSealed', value: 1 }],
+            cooldowns: { ...p.cooldowns, [charId]: 5 } // CD = 5
+          };
+        } else if (!p.isBankrupt) {
+          return {
+            ...p,
+            statusEffects: [...p.statusEffects, { name: '無差別放電感電', duration: 1, kind: 'nextDice', value: 1 }]
+          };
+        }
+        return p;
+      });
+      events.push({
+        type: 'ABILITY_USE',
+        playerId,
+        abilityId: charId,
+        message: `⚡ ${player.name} 發動個性「無差別放電」，消耗 600，使所有其他對手下回合因感電只能擲出 1 點！但自己下回合也會被封印卡片！`
+      });
+      break;
+    }
+
+    case 'earphone_jack': {
+      const targetTileId = Number(payload?.targetTileId);
+      if (targetTileId === undefined || isNaN(targetTileId)) {
+        return { state, events: [], error: '未指定防護罩碎裂目標據點' };
+      }
+      const targetTile = nextState.tiles.find(t => t.id === targetTileId);
+      if (!targetTile || targetTile.statuses.guardRounds <= 0) {
+        return { state, events: [], error: '目標據點沒有處於防守狀態的防護罩' };
+      }
+      const config = getTileConfig(targetTileId);
+      nextState.tiles = nextState.tiles.map(t => {
+        if (t.id === targetTileId) {
+          return { ...t, statuses: { ...t.statuses, guardRounds: 0 } };
+        }
+        return t;
+      });
+      nextState.players = nextState.players.map(p => {
+        if (p.id === playerId) {
+          return { ...p, cooldowns: { ...p.cooldowns, [charId]: 4 } }; // CD = 4
+        }
+        return p;
+      });
+      events.push({
+        type: 'ABILITY_USE',
+        playerId,
+        abilityId: charId,
+        message: `🎧 ${player.name} 發動個性「心跳音爆」，消耗 400，震碎了據點【${config.name}】的防禦防護罩！`
+      });
+      break;
+    }
+
+    case 'shigaraki': {
+      const targetTileId = Number(payload?.targetTileId);
+      if (targetTileId === undefined || isNaN(targetTileId)) {
+        return { state, events: [], error: '未指定要崩壞的據點' };
+      }
+      const targetTile = nextState.tiles.find(t => t.id === targetTileId);
+      if (!targetTile || !targetTile.ownerId || targetTile.level <= 1) {
+        return { state, events: [], error: '目標必須是高於 Level 1 且有主的據點' };
+      }
+      const config = getTileConfig(targetTileId);
+      const nextLevel = targetTile.level - 1;
+      nextState.tiles = nextState.tiles.map(t => {
+        if (t.id === targetTileId) {
+          return { ...t, level: nextLevel as any };
+        }
+        return t;
+      });
+      nextState.players = nextState.players.map(p => {
+        if (p.id === playerId) {
+          return { ...p, cooldowns: { ...p.cooldowns, [charId]: 6 } }; // CD = 6
+        }
+        return p;
+      });
+      events.push({
+        type: 'ABILITY_USE',
+        playerId,
+        abilityId: charId,
+        message: `💀 ${player.name} 發動個性「崩壞之手」，消耗 800，使據點【${config.name}】產生崩壞，等級下降為 Level ${nextLevel}！`
+      });
+      break;
+    }
+
+    case 'dabi': {
+      const targetPlayerId = payload?.targetPlayerId;
+      if (!targetPlayerId || targetPlayerId === playerId) {
+        return { state, events: [], error: '必須選擇其他仍在遊戲中的玩家為目標' };
+      }
+      const target = nextState.players.find(p => p.id === targetPlayerId);
+      if (!target || target.isBankrupt) {
+        return { state, events: [], error: '目標玩家無效或已停業' };
+      }
+      nextState.players = nextState.players.map(p => {
+        if (p.id === playerId) {
+          return { ...p, cooldowns: { ...p.cooldowns, [charId]: 5 } }; // CD = 5
+        }
+        if (p.id === targetPlayerId) {
+          return {
+            ...p,
+            statusEffects: [...p.statusEffects, { name: '蒼炎灼燒', duration: 1, kind: 'rentPayPenalty', value: 0.30 }]
+          };
+        }
+        return p;
+      });
+      events.push({
+        type: 'ABILITY_USE',
+        playerId,
+        abilityId: charId,
+        message: `🔥 ${player.name} 發動個性「煉獄蒼炎」，消耗 500，點燃了 ${target.name}！其下一次支付過路費時將額外多付 30% 蒼炎費！`
+      });
+      break;
+    }
+
     default:
       return { state, events: [], error: '未知的角色個性 ID' };
   }
@@ -301,7 +554,15 @@ function getAbilityName(charId: string): string {
     gou_lift: '爆破施工',
     huang_smoke: '冰封戰線',
     jobs_think: '烈焰排名戰',
-    lin_mansion: '硬化防守'
+    lin_mansion: '硬化防守',
+    all_might: '德州粉碎',
+    eraser_head: '抹消視線',
+    froppy: '蛙類跳躍',
+    tsukuyomi: '深淵暗軀',
+    chargebolt: '無差別放電',
+    earphone_jack: '心跳音爆',
+    shigaraki: '崩壞之手',
+    dabi: '煉獄蒼炎'
   };
   return names[charId] || '未知個性';
 }

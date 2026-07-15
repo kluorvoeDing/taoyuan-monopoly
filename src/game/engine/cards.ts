@@ -68,6 +68,11 @@ export function applyCardEffect(
     return { state, events, error: '目前階段無法使用此卡片' };
   }
 
+  // 檢查是否卡片被抹消封印
+  if (player.statusEffects.some(e => e.kind === 'cardsSealed')) {
+    return { state, events, error: '你的卡牌使用目前正處於「被抹消封印」狀態，無法使用！' };
+  }
+
 
   // 3. 根據卡片 ID 執行不同效果
   switch (cardId) {
@@ -454,6 +459,16 @@ export function applyCardEffect(
   // 4. 卡片使用成功，從手牌中扣除該卡片
   nextState.players = nextState.players.map(p => {
     if (p.id === playerId) {
+      const isLucky = p.characterId === 'earphone_jack' && Math.random() < 0.20;
+      if (isLucky) {
+        events.push({
+          type: 'CARD_USE',
+          playerId,
+          cardId,
+          message: `🎧 耳郎響香啟動被動「耳機插孔」！音爆回響下，本次卡片「${CARDS.find(c => c.id === cardId)?.name || cardId}」使用未被消耗！`
+        });
+        return p;
+      }
       const remainingCards = [...p.cards];
       remainingCards.splice(cardIndex, 1);
       return { ...p, cards: remainingCards };

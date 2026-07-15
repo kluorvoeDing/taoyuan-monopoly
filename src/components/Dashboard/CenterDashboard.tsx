@@ -41,6 +41,14 @@ const renderAvatar = (characterId: string, size: number = 32) => {
     case 'jobs_think': x = 33.33; y = 66.66; break;
     case 'lin_mansion': x = 66.66; y = 66.66; break;
     case 'jay_turn': x = 100; y = 66.66; break;
+    case 'all_might': x = 33.33; y = 33.33; break;
+    case 'eraser_head': x = 66.66; y = 33.33; break;
+    case 'froppy': x = 100; y = 33.33; break;
+    case 'tsukuyomi': x = 0; y = 66.66; break;
+    case 'chargebolt': x = 0; y = 100; break;
+    case 'earphone_jack': x = 33.33; y = 100; break;
+    case 'shigaraki': x = 66.66; y = 100; break;
+    case 'dabi': x = 100; y = 100; break;
   }
   return (
     <div 
@@ -84,10 +92,18 @@ const formatLogMessage = (msg: string) => {
     '飯田天哉': '#2563EB',
     '奮進人': '#EF4444',
     '切島銳兒郎': '#B91C1C',
-    '八百萬百': '#8B5CF6'
+    '八百萬百': '#8B5CF6',
+    '歐爾麥特': '#D97706',
+    '相澤消太': '#4B5563',
+    '蛙吹梅雨': '#059669',
+    '常闇踏陰': '#4338CA',
+    '上鳴電氣': '#EAB308',
+    '耳郎響香': '#DB2777',
+    '死柄木弔': '#0284C7',
+    '茶毘': '#1E1B4B'
   };
 
-  const tokens = cleanMsg.split(/(綠谷出久|爆豪勝己|轟焦凍|麗日御茶子|飯田天哉|奮進人|切島銳兒郎|八百萬百|[\+\-][\d,]+)/);
+  const tokens = cleanMsg.split(/(綠谷出久|爆豪勝己|轟焦凍|麗日御茶子|飯田天哉|奮進人|切島銳兒郎|八百萬百|歐爾麥特|相澤消太|蛙吹梅雨|常闇踏陰|上鳴電氣|耳郎響香|死柄木弔|茶毘|[\+\-][\d,]+)/);
   return tokens.map((token, i) => {
     if (charColors[token]) {
       return <strong key={i} style={{ color: charColors[token] }}>{token}</strong>;

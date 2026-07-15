@@ -250,6 +250,89 @@ export function makeAiActionDecision(state: GameState, playerId: string): GameCo
     }
   }
 
+  // 歐爾麥特：CD 為 0，且手頭資金充裕時，隨時準備免稅
+  if (charCD === 0 && player.characterId === 'all_might' && estimatedCash > 1000) {
+    commands.push({ type: 'USE_ABILITY', playerId });
+    estimatedCash -= 1000;
+  }
+
+  // 相澤消太：封印目前資金最多的活躍對手
+  if (charCD === 0 && player.characterId === 'eraser_head' && estimatedCash > 500) {
+    const target = state.players
+      .filter(p => p.id !== playerId && !p.isBankrupt)
+      .sort((a, b) => b.cash - a.cash)[0];
+    if (target) {
+      commands.push({ type: 'USE_ABILITY', playerId, payload: { targetPlayerId: target.id } });
+      estimatedCash -= 500;
+    }
+  }
+
+  // 蛙吹梅雨：如果前方 2 或 3 格是優質目標，開啟跳躍
+  if (charCD === 0 && player.characterId === 'froppy' && estimatedCash > 400) {
+    const target2 = (player.position + 2) % state.tiles.length;
+    const target3 = (player.position + 3) % state.tiles.length;
+    const score2 = scoreTileForAI(state, playerId, target2);
+    const score3 = scoreTileForAI(state, playerId, target3);
+    const bestStep = score2 > score3 ? 2 : 3;
+    const bestScore = Math.max(score2, score3);
+    if (bestScore > 60) {
+      commands.push({ type: 'USE_ABILITY', playerId, payload: { steps: bestStep } });
+      estimatedCash -= 400;
+    }
+  }
+
+  // 常闇踏陰：使 3 格內戰略價值最高且未被停擺的敵方據點停擺
+  if (charCD === 0 && player.characterId === 'tsukuyomi' && estimatedCash > 500) {
+    const inRange = getNodesWithinRange(player.position, 3, GRAPH_CONNECTIONS);
+    const candidateTiles = state.tiles
+      .filter(t => t.ownerId && t.ownerId !== playerId && inRange.includes(t.id) && !t.statuses.rentDisabledOnce)
+      .sort((a, b) => scoreTileForAI(state, playerId, b.id) - scoreTileForAI(state, playerId, a.id));
+    if (candidateTiles.length > 0) {
+      commands.push({ type: 'USE_ABILITY', playerId, payload: { targetTileId: candidateTiles[0].id } });
+      estimatedCash -= 500;
+    }
+  }
+
+  // 上鳴電氣：只要資金充足，立刻開啟全體感電限制
+  if (charCD === 0 && player.characterId === 'chargebolt' && estimatedCash > 600) {
+    const activeOpponents = state.players.filter(p => p.id !== playerId && !p.isBankrupt);
+    if (activeOpponents.length > 0 && estimatedCash > 2500) {
+      commands.push({ type: 'USE_ABILITY', playerId });
+      estimatedCash -= 600;
+    }
+  }
+
+  // 耳郎響香：震碎周圍有主且處於防守狀態的敵方據點
+  if (charCD === 0 && player.characterId === 'earphone_jack' && estimatedCash > 400) {
+    const guardedTile = state.tiles.find(t => t.ownerId && t.ownerId !== playerId && t.statuses.guardRounds > 0);
+    if (guardedTile) {
+      commands.push({ type: 'USE_ABILITY', playerId, payload: { targetTileId: guardedTile.id } });
+      estimatedCash -= 400;
+    }
+  }
+
+  // 死柄木弔：使場上等級最高的敵方據點崩壞降級
+  if (charCD === 0 && player.characterId === 'shigaraki' && estimatedCash > 800) {
+    const targetEnemyTile = state.tiles
+      .filter(t => t.ownerId && t.ownerId !== playerId && t.level > 1)
+      .sort((a, b) => b.level - a.level)[0];
+    if (targetEnemyTile) {
+      commands.push({ type: 'USE_ABILITY', playerId, payload: { targetTileId: targetEnemyTile.id } });
+      estimatedCash -= 800;
+    }
+  }
+
+  // 茶毘：點燃當前資金最多的對手
+  if (charCD === 0 && player.characterId === 'dabi' && estimatedCash > 500) {
+    const target = state.players
+      .filter(p => p.id !== playerId && !p.isBankrupt)
+      .sort((a, b) => b.cash - a.cash)[0];
+    if (target) {
+      commands.push({ type: 'USE_ABILITY', playerId, payload: { targetPlayerId: target.id } });
+      estimatedCash -= 500;
+    }
+  }
+
   // 2.5 當前地圖格交互 (進駐與擴建)
   const currentTileState = state.tiles.find(t => t.id === player.position)!;
   const currentConfig = getTileConfig(player.position);

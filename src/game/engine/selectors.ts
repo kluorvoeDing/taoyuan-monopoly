@@ -158,10 +158,15 @@ export function calculateUpgradeCost(state: GameState, playerId: string, tileId:
   // 6. 亂入折扣（例如：支援科爆改亂入，個人 upgradeDiscount）
   // 備註：在 player.statusEffects 中，支援科爆改會掛上 upgradeDiscount: 0.50
   
-  let finalCost = baseCost * costMultiplier * (1 - discount) * (state.priceIndex || 1.0);
+  let priceIndex = state.priceIndex || 1.0;
+  if (player.characterId === 'tsukuyomi' && priceIndex > 1.0) {
+    priceIndex = 1.0 + (priceIndex - 1.0) * 0.85;
+  }
+
+  let finalCost = baseCost * costMultiplier * (1 - discount) * priceIndex;
 
   // 限制：最低有效擴建費不得低於基礎擴建費的 10%
-  const minCost = baseCost * 0.10 * (state.priceIndex || 1.0);
+  const minCost = baseCost * 0.10 * priceIndex;
   if (finalCost < minCost) {
     finalCost = minCost;
   }
@@ -219,6 +224,11 @@ export function calculateRent(
     rent *= 1.20;
     notes.push("奮進人烈焰排名戰被動 +20%");
   }
+  // 茶毘被動：自己據點過路費收益 +10%
+  if (owner.characterId === 'dabi') {
+    rent *= 1.10;
+    notes.push("茶毘蒼炎被動 +10%");
+  }
 
   // 3. 地區套裝加成
   if (config.zone) {
@@ -230,7 +240,7 @@ export function calculateRent(
   }
 
   // 4. 據點干擾或停擺
-  if (tileState.statuses.rentDisabledOnce) {
+  if (tileState.statuses.rentDisabledOnce && owner.characterId !== 'eraser_head') {
     // 停擺一次：支援費為 0
     if (!options.simulate) {
       // 這裡不直接修改 state，在 reducer 觸發時才清除該標記
@@ -239,7 +249,7 @@ export function calculateRent(
     return { rent: 0, notes };
   }
 
-  if (tileState.statuses.disruptedRounds > 0) {
+  if (tileState.statuses.disruptedRounds > 0 && owner.characterId !== 'eraser_head') {
     rent *= 0.60; // 據點干擾：支援費 × 0.6
     notes.push("據點干擾 -40%");
   }
@@ -294,6 +304,18 @@ export function calculateRent(
     if (isLucky) {
       rent *= 0.80;
       notes.push("麗日御茶子 20% 機率打 8 折");
+    }
+  }
+
+  // 11. 歐爾麥特被動：支付支援費時 20% 機率直接免單
+  if (payer.characterId === 'all_might') {
+    const isLucky = options.simulate 
+      ? (options.customSeed !== undefined ? (options.customSeed % 100 < 20) : false)
+      : Math.random() < 0.20;
+    
+    if (isLucky) {
+      rent = 0;
+      notes.push("歐爾麥特 One For All 被動：免付過路費！");
     }
   }
 

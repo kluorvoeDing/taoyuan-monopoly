@@ -397,6 +397,14 @@ export const Board: React.FC = () => {
               case 'jobs_think': x = 33.33; y = 66.66; break;
               case 'lin_mansion': x = 66.66; y = 66.66; break;
               case 'jay_turn': x = 100; y = 66.66; break;
+              case 'all_might': x = 33.33; y = 33.33; break;
+              case 'eraser_head': x = 66.66; y = 33.33; break;
+              case 'froppy': x = 100; y = 33.33; break;
+              case 'tsukuyomi': x = 0; y = 66.66; break;
+              case 'chargebolt': x = 0; y = 100; break;
+              case 'earphone_jack': x = 33.33; y = 100; break;
+              case 'shigaraki': x = 66.66; y = 100; break;
+              case 'dabi': x = 100; y = 100; break;
             }
 
             return (
