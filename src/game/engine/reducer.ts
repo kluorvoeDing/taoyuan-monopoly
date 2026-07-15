@@ -18,6 +18,7 @@ import { endTurn } from './turnMachine';
 import { CHARACTERS } from '../../data/characters';
 import { TILES } from '../../data/tiles';
 import { RAIDS } from '../../data/raids';
+import { CARDS, CARD_PRICES } from '../../data/cards';
 import { DISTRICTS } from '../../data/districts';
 
 const ENGINE_VERSION = '1.0.0';
@@ -558,6 +559,7 @@ export function gameReducer(state: GameState | null, command: GameCommand): Comm
       });
     }
 
+    nextState.lastDiceValue = dice;
     nextState.rngState = rng.getStateString(); // 更新 RNG 狀態
 
     // 執行步數路徑模擬 (隨機分支選擇，首步符合已選 heading)
@@ -877,6 +879,53 @@ export function gameReducer(state: GameState | null, command: GameCommand): Comm
 
     // 💀 死柄木弔被動：升級據點觸發崩壞
     nextState = triggerShigarakiPassive(nextState, activePlayer.id, activePlayer.position, events);
+
+    return {
+      state: nextState,
+      events
+    };
+  }
+
+  // ================= 6.5. 處理 BUY_CARD =================
+  if (command.type === 'BUY_CARD') {
+    if (nextState.phase !== 'action') {
+      return { state, events, error: '只能在行動階段進行商店交易' };
+    }
+    const player = nextState.players.find(p => p.id === command.playerId);
+    if (!player || player.isBankrupt) {
+      return { state, events, error: '玩家無效或已停業' };
+    }
+    if (player.cards.length >= 5) {
+      return { state, events, error: '手牌已達上限 (5 張)，無法購買道具' };
+    }
+    const price = CARD_PRICES[command.cardId];
+    if (price === undefined) {
+      return { state, events, error: '無效的道具卡片 ID' };
+    }
+    if (player.cash < price) {
+      return { state, events, error: `資金不足，無法購買道具 (價格: ${price})` };
+    }
+
+    // 扣除現金並加入手牌
+    nextState.players = nextState.players.map(p => {
+      if (p.id === command.playerId) {
+        return {
+          ...p,
+          cash: p.cash - price,
+          cards: [...p.cards, command.cardId]
+        };
+      }
+      return p;
+    });
+
+    const cardName = CARDS.find(c => c.id === command.cardId)?.name || command.cardId;
+    events.push({
+      type: 'CARD_PURCHASE',
+      playerId: command.playerId,
+      cardId: command.cardId,
+      amount: price,
+      message: `🛒 ${player.name} 支付了 ${price.toLocaleString("zh-Hant-TW")}，從商店購買了道具【${cardName}】！`
+    });
 
     return {
       state: nextState,

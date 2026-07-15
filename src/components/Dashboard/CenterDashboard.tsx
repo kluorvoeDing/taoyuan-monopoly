@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../../store/gameStore';
 import { getTileConfig, calculatePurchasePrice, calculateUpgradeCost, calculateNetWorth, calculateRent } from '../../game/engine/selectors';
 import { CHARACTERS } from '../../data/characters';
-import { CARDS } from '../../data/cards';
+import { CARDS, CARD_PRICES } from '../../data/cards';
 import { DISTRICTS } from '../../data/districts';
 import { makeAiPreRollDecision, makeAiActionDecision, makeAiPathDecision } from '../../game/engine/ai';
 import { getValidNextDirections, GRAPH_CONNECTIONS } from '../../game/engine/reducer';
@@ -138,12 +138,31 @@ export const CenterDashboard: React.FC = () => {
   // 數位骰子滾動動畫狀態
   const [localDiceRolling, setLocalDiceRolling] = useState(false);
   const [currentDiceFace, setCurrentDiceFace] = useState(1);
+  const [currentDiceFace2, setCurrentDiceFace2] = useState(1);
+
+  // 商店模態框
+  const [showShopModal, setShowShopModal] = useState(false);
+
+  // 突發事件/亂入懸浮視窗
+  const [activePopup, setActivePopup] = useState<{
+    id: string;
+    title: string;
+    type: 'fate' | 'raid' | 'lottery' | 'empty';
+    playerName: string;
+    characterId?: string;
+    description: string;
+    isAi: boolean;
+  } | null>(null);
+
+  // 追蹤處理過的日誌 ID，避免重複跳出
+  const lastProcessedLogIdRef = useRef<string | null>(null);
 
   const triggerDiceRoll = (callback: () => void) => {
     setLocalDiceRolling(true);
     let count = 0;
     const interval = setInterval(() => {
       setCurrentDiceFace(Math.floor(Math.random() * 6) + 1);
+      setCurrentDiceFace2(Math.floor(Math.random() * 6) + 1);
       count++;
       if (count > 10) { // 滾動 500 毫秒
         clearInterval(interval);
@@ -152,6 +171,72 @@ export const CenterDashboard: React.FC = () => {
       }
     }, 50);
   };
+
+  // AI 突發事件自動關閉計時器
+  useEffect(() => {
+    if (!activePopup || !activePopup.isAi) return;
+    const t = setTimeout(() => {
+      setActivePopup(null);
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [activePopup]);
+
+  // 突發事件日誌監聽器
+  useEffect(() => {
+    if (!state || !state.eventLog || state.eventLog.length === 0) return;
+    const latestLog = state.eventLog[0];
+    if (!latestLog) return;
+    
+    // 如果已經處理過該日誌，就不再處理
+    if (lastProcessedLogIdRef.current === latestLog.id) return;
+    lastProcessedLogIdRef.current = latestLog.id;
+
+    const pState = latestLog.playerId ? state.players.find(p => p.id === latestLog.playerId) : null;
+    const isAi = pState ? pState.control === 'ai' : false;
+
+    // 檢查日誌類型與跳出條件
+    const logType = latestLog.type as string;
+    if (logType === 'EVENT_TRIGGERED') {
+      // 命運事件
+      const desc = latestLog.message.split('「')[1]?.split('」：')[1] || latestLog.message.split('：')[1] || latestLog.message;
+      const titleMatch = latestLog.message.match(/突發事件「(.*?)」/);
+      const title = titleMatch ? `📢 突發事件: ${titleMatch[1]}` : '📢 突發事件';
+      setActivePopup({
+        id: latestLog.id,
+        title,
+        type: 'fate',
+        playerName: pState?.name || '',
+        characterId: pState?.characterId,
+        description: desc,
+        isAi
+      });
+    } else if (logType === 'RAID_TRIGGERED') {
+      // 亂入事件
+      const desc = latestLog.message.split('（')[1]?.split('）')[0] || latestLog.message.split('！')[1] || latestLog.message;
+      const titleMatch = latestLog.message.match(/撞見了 (.*?)！/);
+      const title = titleMatch ? `💥 遭遇亂入: ${titleMatch[1]}` : '💥 遭遇亂入';
+      setActivePopup({
+        id: latestLog.id,
+        title,
+        type: 'raid',
+        playerName: pState?.name || '',
+        characterId: pState?.characterId,
+        description: desc,
+        isAi
+      });
+    } else if (logType === 'LOTTERY_WIN') {
+      // 支援基金大獎
+      setActivePopup({
+        id: latestLog.id,
+        title: '🎉 支援基金大獎！',
+        type: 'lottery',
+        playerName: pState?.name || '',
+        characterId: pState?.characterId,
+        description: latestLog.message,
+        isAi
+      });
+    }
+  }, [state]);
 
   if (!state) return null;
 
@@ -496,13 +581,46 @@ export const CenterDashboard: React.FC = () => {
     }
   };
 
-  const getLastDiceRollFromLogs = (): number | null => {
+  const getLastDiceRollInfo = (): { isDouble: boolean; d1: number; d2?: number; sum: number } | null => {
     if (!state || !state.eventLog) return null;
     for (let i = 0; i < state.eventLog.length; i++) {
       const log = state.eventLog[i];
-      const match = log.message.match(/擲出了 (\d+) 點/);
-      if (match) {
-        return parseInt(match[1], 10);
+      // 🏍️ 玩家 騎乘機車投擲雙骰：d1 + d2 = sum 點。
+      const doubleMatch = log.message.match(/投擲雙骰：(\d+) \+ (\d+) = (\d+)/);
+      if (doubleMatch) {
+        return {
+          isDouble: true,
+          d1: parseInt(doubleMatch[1], 10),
+          d2: parseInt(doubleMatch[2], 10),
+          sum: parseInt(doubleMatch[3], 10)
+        };
+      }
+      // 🎯 玩家 使用遙控骰子，指定移動 X 點。
+      const fixedMatch = log.message.match(/指定移動 (\d+) 點/);
+      if (fixedMatch) {
+        return {
+          isDouble: false,
+          d1: parseInt(fixedMatch[1], 10),
+          sum: parseInt(fixedMatch[1], 10)
+        };
+      }
+      // 🎲 玩家 擲出了 X 點。
+      const standardMatch = log.message.match(/擲出了 (\d+) 點/);
+      if (standardMatch) {
+        return {
+          isDouble: false,
+          d1: parseInt(standardMatch[1], 10),
+          sum: parseInt(standardMatch[1], 10)
+        };
+      }
+      // 🐢 玩家 受到烏龜狀態影響，本回合只能前進 1 格。
+      const turtleMatch = log.message.match(/只能前進 (\d+) 格/);
+      if (turtleMatch) {
+        return {
+          isDouble: false,
+          d1: parseInt(turtleMatch[1], 10),
+          sum: parseInt(turtleMatch[1], 10)
+        };
       }
     }
     return null;
@@ -654,9 +772,25 @@ export const CenterDashboard: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {/* 骰子與擲骰 */}
                 <div className={styles.diceArea}>
-                  <div className={`${styles.diceDisplay} ${localDiceRolling ? styles.diceRolling : ''}`}>
-                    {localDiceRolling ? currentDiceFace : (getLastDiceRollFromLogs() || '?')}
-                  </div>
+                  {activePlayer.statusEffects.some(e => e.kind === 'motorcycleLimit') ? (
+                    <div className={styles.doubleDiceContainer}>
+                      <div className={`${styles.diceDisplay} ${localDiceRolling ? styles.diceRolling : ''}`} title="骰子 1">
+                        {localDiceRolling ? currentDiceFace : (getLastDiceRollInfo()?.d1 || '?')}
+                      </div>
+                      <div className={styles.dicePlus}>+</div>
+                      <div className={`${styles.diceDisplay} ${localDiceRolling ? styles.diceRolling : ''}`} title="骰子 2">
+                        {localDiceRolling ? currentDiceFace2 : (getLastDiceRollInfo()?.d2 || '?')}
+                      </div>
+                      <div className={styles.diceEquals}>=</div>
+                      <div className={styles.diceSum} title="總點數">
+                        {localDiceRolling ? (currentDiceFace + currentDiceFace2) : (getLastDiceRollInfo()?.sum || '?')}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={`${styles.diceDisplay} ${localDiceRolling ? styles.diceRolling : ''}`}>
+                      {localDiceRolling ? currentDiceFace : (getLastDiceRollInfo()?.sum || '?')}
+                    </div>
+                  )}
                   {state.phase === 'preRoll' ? (
                     <>
                       <button 
@@ -754,6 +888,18 @@ export const CenterDashboard: React.FC = () => {
                     🧱 擴建
                   </button>
 
+                  <button 
+                    className={styles.btnAction}
+                    disabled={state.phase !== 'action' || !isHumanTurn}
+                    onClick={() => {
+                      setShowShopModal(!showShopModal);
+                      setShowHandCards(false);
+                    }}
+                    style={{ color: showShopModal ? 'var(--primary, #f97316)' : undefined, borderColor: showShopModal ? 'var(--primary, #f97316)' : undefined }}
+                  >
+                    🛒 商店
+                  </button>
+
                   {/* 裝備手牌按鈕 */}
                   <button 
                     className={styles.btnAction}
@@ -798,6 +944,68 @@ export const CenterDashboard: React.FC = () => {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+
+                {/* 商店浮動列表抽屜 */}
+                {showShopModal && (
+                  <div className={styles.floatingHand} style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '6px' }}>
+                      <span style={{ fontSize: '11px', fontWeight: 800, color: 'var(--primary)' }}>🛒 支援道具商店</span>
+                      <span style={{ fontSize: '9px', color: 'var(--text-secondary)' }}>手牌：{activePlayer.cards.length} / 5</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {CARDS.map(card => {
+                        const price = CARD_PRICES[card.id];
+                        const canBuyCard = activePlayer.cash >= price && activePlayer.cards.length < 5;
+                        return (
+                          <div 
+                            key={card.id}
+                            className={styles.cardItem}
+                            style={{ 
+                              display: 'flex', 
+                              justifyContent: 'space-between', 
+                              alignItems: 'center', 
+                              padding: '8px 10px',
+                              cursor: canBuyCard ? 'pointer' : 'not-allowed',
+                              opacity: canBuyCard ? 1 : 0.65,
+                              borderColor: canBuyCard ? 'var(--primary)' : '#e5e7eb'
+                            }}
+                            onClick={() => {
+                              if (canBuyCard) {
+                                dispatch({ type: 'BUY_CARD', playerId: activePlayer.id, cardId: card.id });
+                              }
+                            }}
+                            title={`${card.description}\n售價: $${price.toLocaleString("zh-Hant-TW")}`}
+                          >
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', textAlign: 'left', flex: 1, paddingRight: '12px' }}>
+                              <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                {getCardIcon(card.id)} {card.name}
+                              </span>
+                              <span style={{ fontSize: '9px', color: 'var(--text-secondary)', lineHeight: 1.3 }}>
+                                {card.description}
+                              </span>
+                            </div>
+                            <button
+                              disabled={!canBuyCard}
+                              style={{
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: canBuyCard ? 'var(--primary-gradient)' : '#e5e7eb',
+                                color: canBuyCard ? '#ffffff' : '#9ca3af',
+                                cursor: canBuyCard ? 'pointer' : 'not-allowed',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              ${price.toLocaleString("zh-Hant-TW")}
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1028,6 +1236,77 @@ export const CenterDashboard: React.FC = () => {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {/* 突發事件/亂入懸浮說明視窗 */}
+      {activePopup && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(30, 30, 36, 0.4)',
+          backdropFilter: 'blur(4px)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 9999
+        }}>
+          <div style={{
+            background: '#FAF8F5',
+            border: '2px solid var(--primary)',
+            borderRadius: '16px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+            width: '90%',
+            maxWidth: '420px',
+            padding: '24px',
+            textAlign: 'center',
+            position: 'relative'
+          }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>
+              {activePopup.type === 'fate' ? '📢' : activePopup.type === 'raid' ? '💥' : '🎉'}
+            </div>
+            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 800, color: 'var(--primary)' }}>
+              {activePopup.title}
+            </h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '16px' }}>
+              {activePopup.characterId && renderAvatar(activePopup.characterId, 24)}
+              <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                {activePopup.playerName}
+              </span>
+              {activePopup.isAi && (
+                <span style={{ fontSize: '10px', background: 'rgba(15, 118, 110, 0.1)', color: 'var(--secondary)', padding: '1px 5px', borderRadius: '4px', fontWeight: 700 }}>
+                  AI 行動
+                </span>
+              )}
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 20px 0', padding: '12px', background: '#F3EFE9', borderRadius: '8px', border: '1px solid #E5DFD3' }}>
+              {activePopup.description}
+            </p>
+            {!activePopup.isAi ? (
+              <button 
+                onClick={() => setActivePopup(null)}
+                style={{
+                  background: 'var(--primary-gradient)',
+                  color: '#fff',
+                  border: 'none',
+                  fontSize: '14px',
+                  fontWeight: 700,
+                  padding: '10px 32px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(194, 65, 12, 0.2)'
+                }}
+              >
+                收到，繼續
+              </button>
+            ) : (
+              <span style={{ fontSize: '11px', color: 'var(--secondary)', fontStyle: 'italic' }}>
+                ⌛ AI 自動進行中，即將自動關閉...
+              </span>
+            )}
           </div>
         </div>
       )}

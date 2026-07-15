@@ -40,12 +40,12 @@
   background: rgba(249, 247, 243, 0.85);
   border: 1px solid #E7E1D7;
   border-radius: 9px;
-  padding: 6px 8px;
+  padding: 6px 10px;
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 0 1 158px;
-  min-width: 112px;
+  flex: 0 1 180px;
+  min-width: 140px;
   height: 48px;
   position: relative;
   transition: all var(--transition-fast);
@@ -94,6 +94,9 @@
   line-height: 1.25;
   justify-content: center;
   min-width: 0;
+  padding-right: 34px;
+  box-sizing: border-box;
+  flex: 1;
 }
 
 .playerName {
@@ -103,7 +106,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 96px;
+  max-width: 86px;
 }
 
 .playerCash {
@@ -116,15 +119,16 @@
 
 .playerCD {
   position: absolute;
-  top: 4px;
+  top: 50%;
+  transform: translateY(-50%);
   right: 6px;
   font-size: 9px;
   font-family: var(--font-mono);
   background: rgba(220, 38, 38, 0.1);
   color: #DC2626;
-  padding: 0 4px;
+  padding: 2px 5px;
   border-radius: 4px;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 /* ---- 中間：行動指揮中心 ---- */
@@ -815,4 +819,30 @@
 .propertyLevel {
   font-size: 10px;
   color: var(--text-secondary);
+}
+
+.doubleDiceContainer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dicePlus, .diceEquals {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.diceSum {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--primary);
+  background: rgba(194, 65, 12, 0.08);
+  border: 1.5px solid rgba(194, 65, 12, 0.2);
+  border-radius: 8px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

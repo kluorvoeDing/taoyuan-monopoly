@@ -26,3 +26,20 @@ export const CARDS: CardConfig[] = [
 ];
 
 export type CardId = typeof CARDS[number]['id'];
+
+export const CARD_PRICES: Record<string, number> = {
+  remote_dice: 1000,
+  turtle_card: 800,
+  roadblock: 600,
+  stay_card: 1000,
+  rent_free: 1200,
+  rent_boost: 1000,
+  demolish: 1500,
+  tax_check: 1200,
+  site_guard: 800,
+  support_repair: 600,
+  provisional_license: 1500,
+  crisis_pr: 800,
+  first_aid: 2000,
+  motorcycle_card: 1200
+};

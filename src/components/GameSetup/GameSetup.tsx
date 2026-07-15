@@ -138,17 +138,17 @@ export const GameSetup: React.FC = () => {
                     className={styles.charStandee} 
                     style={{ backgroundImage: `url(/fullbody/${char.id}.png)` }} 
                   />
-                  <div className={styles.charHeader} style={{ display: 'flex', alignItems: 'center', gap: '8px', zIndex: 1 }}>
+                  <div className={styles.charHeader}>
                     {renderAvatar(char.id, 32)}
-                    <div style={{ display: 'flex', flexDirection: 'column', zIndex: 1 }}>
+                    <div className={styles.charTitleArea}>
                       <span className={styles.charName}>{char.name}</span>
-                      <span className={styles.charQuirk} style={{ fontSize: '10px', marginTop: '2px', alignSelf: 'flex-start' }}>{char.quirk}</span>
+                      <span className={styles.charQuirk}>{char.quirk}</span>
                     </div>
                   </div>
-                  <div style={{ zIndex: 1 }}>
-                    <span className={styles.charAbilityName}>{char.abilityName}</span>
+                  <div className={styles.charBody}>
+                    <span className={styles.charAbilityName}>⚡ {char.abilityName}</span>
+                    <p className={styles.charAbilityText}>{char.abilityText}</p>
                   </div>
-                  <p className={styles.charAbilityText} style={{ zIndex: 1 }}>{char.abilityText}</p>
                 </div>
               );
             })}

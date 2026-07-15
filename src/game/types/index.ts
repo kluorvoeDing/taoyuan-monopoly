@@ -103,6 +103,7 @@ export type GameCommand =
   | { type: 'USE_CARD'; playerId: string; cardId: string; payload?: any }
   | { type: 'BUY_CURRENT_TILE'; playerId: string }
   | { type: 'UPGRADE_CURRENT_TILE'; playerId: string }
+  | { type: 'BUY_CARD'; playerId: string; cardId: string }
   | { type: 'END_TURN'; playerId: string }
   | { type: 'SELECT_TILE'; tileId: number }
   | { type: 'FORCE_STATE'; state: GameState }; // 用於存檔恢復
