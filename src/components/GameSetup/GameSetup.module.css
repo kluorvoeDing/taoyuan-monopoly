@@ -123,6 +123,31 @@
   text-align: left;
 }
 
+.charStandee {
+  position: absolute;
+  right: -10px;
+  bottom: -20px;
+  width: 100px;
+  height: 130px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  opacity: 0.12;
+  transition: opacity var(--transition-normal), transform var(--transition-normal);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.charCard:hover .charStandee {
+  opacity: 0.25;
+  transform: scale(1.05);
+}
+
+.selectedCard .charStandee {
+  opacity: 0.45;
+  transform: scale(1.1);
+}
+
 .charCard::after {
   content: '';
   position: absolute;
@@ -182,7 +207,7 @@
 
 .startButton {
   align-self: center;
-  background: linear-gradient(135deg, #F97316 0%, #C2410C 100%);
+  background: var(--primary-gradient);
   color: #fff;
   border: none;
   font-size: 16px;
@@ -195,7 +220,7 @@
 }
 
 .startButton:hover:not(:disabled) {
-  background: linear-gradient(135deg, #FB923C 0%, #EA580C 100%);
+  background: var(--primary-strong);
   transform: translateY(-1px);
   box-shadow: 0 6px 16px rgba(194, 65, 12, 0.25);
 }

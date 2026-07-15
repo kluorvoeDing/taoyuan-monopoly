@@ -386,27 +386,6 @@ export const Board: React.FC = () => {
             const currentVisualPos = visualPositions[p.id] !== undefined ? visualPositions[p.id] : p.position;
             const coords = getPlayerCoordinates(p.id, currentVisualPos);
             const playerColor = getPlayerColor(p.id);
-            let x = 0;
-            let y = 0;
-            switch (p.characterId) {
-              case 'bill_rice': x = 0; y = 0; break;
-              case 'gou_lift': x = 33.33; y = 0; break;
-              case 'huang_smoke': x = 66.66; y = 0; break;
-              case 'jolin_zero': x = 100; y = 0; break;
-              case 'musk_bite': x = 0; y = 33.33; break;
-              case 'jobs_think': x = 33.33; y = 66.66; break;
-              case 'lin_mansion': x = 66.66; y = 66.66; break;
-              case 'jay_turn': x = 100; y = 66.66; break;
-              case 'all_might': x = 33.33; y = 33.33; break;
-              case 'eraser_head': x = 66.66; y = 33.33; break;
-              case 'froppy': x = 100; y = 33.33; break;
-              case 'tsukuyomi': x = 0; y = 66.66; break;
-              case 'chargebolt': x = 0; y = 100; break;
-              case 'earphone_jack': x = 33.33; y = 100; break;
-              case 'shigaraki': x = 66.66; y = 100; break;
-              case 'dabi': x = 100; y = 100; break;
-            }
-
             return (
               <span
                 key={p.id}
@@ -415,9 +394,9 @@ export const Board: React.FC = () => {
                   left: `${coords.x}%`,
                   top: `${coords.y}%`,
                   color: playerColor,
-                  backgroundImage: 'url(/avatars.jpg)',
-                  backgroundSize: '400% 400%',
-                  backgroundPosition: `${x}% ${y}%`,
+                  backgroundImage: `url(/avatars/${p.characterId}.png)`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
                   backgroundColor: '#ffffff',
                   zIndex: 30
                 }}

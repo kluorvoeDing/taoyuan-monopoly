@@ -23,7 +23,7 @@ describe('桃園 Hero City 遊戲引擎單元測試', () => {
 
   it('應正確初始化遊戲，AI 玩家不重複且資金相同，且綠谷無額外資金', () => {
     // 選擇綠谷出久 (bill_rice)
-    const result = gameReducer(null, startGameCommand(options, 'bill_rice', 'test_seed'));
+    const result = gameReducer(null, startGameCommand(options, 'izuku_midoriya', 'test_seed'));
     expect(result.error).toBeUndefined();
     expect(result.state).toBeDefined();
     
@@ -47,7 +47,7 @@ describe('桃園 Hero City 遊戲引擎單元測試', () => {
 
   it('確定性隨機數與移動功能應正常運作，跨越/停在起點獲得對應經費', () => {
     // 初始化
-    let result = gameReducer(null, startGameCommand(options, 'bill_rice', 'fixed_seed_1'));
+    let result = gameReducer(null, startGameCommand(options, 'izuku_midoriya', 'fixed_seed_1'));
     let state = result.state;
 
     // 模擬擲骰子 (第一步)
@@ -92,7 +92,7 @@ describe('桃園 Hero City 遊戲引擎單元測試', () => {
   });
 
   it('地產進駐、擴建以及地區套裝支援費加成應符合規格', () => {
-    let result = gameReducer(null, startGameCommand(options, 'bill_rice', 'test_seed'));
+    let result = gameReducer(null, startGameCommand(options, 'izuku_midoriya', 'test_seed'));
     let state = result.state;
 
     // 強制將 p1 放於第 1 格 (桃園站前, S級, zone = taoyuan_core)
@@ -145,7 +145,7 @@ describe('桃園 Hero City 遊戲引擎單元測試', () => {
   });
 
   it('緊急拍賣撤收與停業流程應完全可預測', () => {
-    let result = gameReducer(null, startGameCommand(options, 'bill_rice', 'test_seed'));
+    let result = gameReducer(null, startGameCommand(options, 'izuku_midoriya', 'test_seed'));
     let state = result.state;
 
     // p1 進駐第 3 格 (民生路, B級 3200) 並升級至 Level 2
@@ -191,7 +191,7 @@ describe('桃園 Hero City 遊戲引擎單元測試', () => {
   });
 
   it('被停回合的玩家在回合開始時應再次觸發所在格，且跳過移動與地產操作', () => {
-    let result = gameReducer(null, startGameCommand(options, 'bill_rice', 'test_seed'));
+    let result = gameReducer(null, startGameCommand(options, 'izuku_midoriya', 'test_seed'));
     let state = result.state;
 
     // 將 p2 (AI) 放到第 4 格 (支援站, 抽卡格)

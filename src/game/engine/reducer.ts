@@ -306,7 +306,7 @@ function triggerShigarakiPassive(
 ): GameState {
   let nextState = { ...state };
   const player = nextState.players.find(p => p.id === playerId);
-  if (!player || player.characterId !== 'shigaraki') return nextState;
+  if (!player || player.characterId !== 'tomura_shigaraki') return nextState;
 
   const neighbors = GRAPH_CONNECTIONS[tileId] || [];
   let rng = new SeedableRNG(nextState.rngState || 'default');
@@ -568,7 +568,7 @@ export function gameReducer(state: GameState | null, command: GameCommand): Comm
       headingNode = validDirs[idx];
     }
 
-    const isFroppy = activePlayer.characterId === 'froppy';
+    const isFroppy = activePlayer.characterId === 'tsuyu_asui';
     const bypassRoadblock = isFroppy && rng.range(1, 100) <= 50;
 
     const { path, crossedStart } = simulatePath(
@@ -932,7 +932,7 @@ export function gameReducer(state: GameState | null, command: GameCommand): Comm
     // 檢查下一位玩家是否被停回合 (skipNextTurn)
     const isFrozen = nextPlayer.statusEffects.some(e => e.kind === 'skipNextTurn');
     if (nextState.mode !== 'finished' && isFrozen) {
-      if (nextPlayer.characterId === 'eraser_head') {
+      if (nextPlayer.characterId === 'shota_aizawa') {
         // 抹消被動：免疫停行
         nextState.players = nextState.players.map(p => {
           if (p.id === nextPlayer.id) {
@@ -1151,7 +1151,7 @@ function handleLanding(
         // 支付標準交通費：300 
         let fee = 300;
         // 飯田天哉被動：交通費 +20% (即 360)
-        if (player.characterId === 'musk_bite') {
+        if (player.characterId === 'tenya_iida') {
           fee = Math.round(fee * 1.20);
         }
 
@@ -1160,7 +1160,7 @@ function handleLanding(
         events = [...events, ...payResult.events];
 
         // 上鳴電氣被動：抵達交通格額外獲得 500 發電補助
-        if (player.characterId === 'chargebolt') {
+        if (player.characterId === 'denki_kaminari') {
           const giveResult = giveCash(nextState, playerId, 500, '帶電被動發電補助');
           nextState = giveResult.state;
           events = [...events, ...giveResult.events];
@@ -1173,7 +1173,7 @@ function handleLanding(
 
         // 飯田天哉被動：抵達交通格後額外前進 2 格，且觸發新格
         const updatedPlayer = nextState.players.find(p => p.id === playerId)!;
-        if (player.characterId === 'musk_bite' && !updatedPlayer.isBankrupt) {
+        if (player.characterId === 'tenya_iida' && !updatedPlayer.isBankrupt) {
           events.push({
             type: 'TRAFFIC_BOOST',
             playerId,

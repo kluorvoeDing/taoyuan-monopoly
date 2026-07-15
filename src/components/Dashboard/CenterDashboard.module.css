@@ -673,6 +673,42 @@
   gap: 16px;
 }
 
+
+.sidebarShowcase {
+  position: relative;
+  height: 240px;
+  background: rgba(249, 247, 243, 0.5);
+  border: 1px dashed rgba(231, 225, 215, 0.95);
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.sidebarShowcaseStandee {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  width: 100%;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 2;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.12));
+}
+
+.sidebarShowcaseBlob {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  opacity: 0.12;
+  filter: blur(40px);
+  z-index: 1;
+}
+
 .profileSection {
   display: flex;
   gap: 12px;

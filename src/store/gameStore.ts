@@ -67,12 +67,51 @@ interface GameStore {
 const LOCAL_STORAGE_SAVE_KEY = 'hero-city.save.v1';
 const LOCAL_STORAGE_SETTINGS_KEY = 'hero-city.settings.v1';
 
+function migrateGameState(state: any): any {
+  if (!state || !state.players) return state;
+  const mapping: Record<string, string> = {
+    bill_rice: 'izuku_midoriya',
+    musk_bite: 'tenya_iida',
+    jay_turn: 'momo_yaoyorozu',
+    jolin_zero: 'ochaco_uraraka',
+    gou_lift: 'katsuki_bakugo',
+    huang_smoke: 'shoto_todoroki',
+    jobs_think: 'endeavor_enji_todoroki',
+    lin_mansion: 'eijiro_kirishima',
+    eraser_head: 'shota_aizawa',
+    froppy: 'tsuyu_asui',
+    tsukuyomi: 'fumikage_tokoyami',
+    chargebolt: 'denki_kaminari',
+    earphone_jack: 'kyoka_jiro',
+    shigaraki: 'tomura_shigaraki'
+  };
+
+  const updatedPlayers = state.players.map((p: any) => {
+    if (!p) return p;
+    let characterId = p.characterId;
+    if (mapping[characterId]) {
+      characterId = mapping[characterId];
+    }
+    const cooldowns: Record<string, number> = {};
+    if (p.cooldowns) {
+      for (const [key, value] of Object.entries(p.cooldowns)) {
+        const newKey = mapping[key] || key;
+        cooldowns[newKey] = value as number;
+      }
+    }
+    return { ...p, characterId, cooldowns };
+  });
+
+  return { ...state, players: updatedPlayers };
+}
+
 // 讀取初始存檔 (如果有的話)
 function getInitialState(): GameState | null {
   try {
     const saved = localStorage.getItem(LOCAL_STORAGE_SAVE_KEY);
     if (saved) {
-      return JSON.parse(saved);
+      const parsed = JSON.parse(saved);
+      return migrateGameState(parsed);
     }
   } catch (err) {
     console.error('無法載入舊存檔:', err);
@@ -531,8 +570,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   importState: (json) => {
     try {
-      const parsed = JSON.parse(json);
+      let parsed = JSON.parse(json);
       if (parsed && parsed.version && parsed.players && parsed.tiles) {
+        parsed = migrateGameState(parsed);
         const result = gameReducer(parsed, { type: 'FORCE_STATE', state: parsed });
         if (result.state) {
           localStorage.setItem(LOCAL_STORAGE_SAVE_KEY, JSON.stringify(result.state));

@@ -104,7 +104,7 @@ export function calculatePurchasePrice(state: GameState, player: PlayerState, ti
   let price = TILE_PRICE_BY_TIER[config.tier];
   
   // 切島銳兒郎被動：C級土地進駐費 -8%
-  if (player.characterId === 'lin_mansion' && config.tier === 'C') {
+  if (player.characterId === 'eijiro_kirishima' && config.tier === 'C') {
     price = price * 0.92;
   }
 
@@ -128,14 +128,14 @@ export function calculateUpgradeCost(state: GameState, playerId: string, tileId:
   let discount = 0;
 
   // 1. 爆豪勝己被動：擴建費 -10%
-  if (player.characterId === 'gou_lift') {
+  if (player.characterId === 'katsuki_bakugo') {
     discount += 0.10;
   }
 
   // 2. 奮進人被動懲罰：No.1 英雄事務所建設費 +20% (從 Lv3 升到 Lv4 時)
   let costMultiplier = 1.0;
   const tileState = state.tiles.find(t => t.id === tileId);
-  if (player.characterId === 'jobs_think' && tileState && tileState.level === 3) {
+  if (player.characterId === 'endeavor_enji_todoroki' && tileState && tileState.level === 3) {
     costMultiplier = 1.2;
   }
 
@@ -159,7 +159,7 @@ export function calculateUpgradeCost(state: GameState, playerId: string, tileId:
   // 備註：在 player.statusEffects 中，支援科爆改會掛上 upgradeDiscount: 0.50
   
   let priceIndex = state.priceIndex || 1.0;
-  if (player.characterId === 'tsukuyomi' && priceIndex > 1.0) {
+  if (player.characterId === 'fumikage_tokoyami' && priceIndex > 1.0) {
     priceIndex = 1.0 + (priceIndex - 1.0) * 0.85;
   }
 
@@ -215,12 +215,12 @@ export function calculateRent(
 
   // 2. 土地擁有者角色被動
   // 轟焦凍被動：S 級據點支援費 +8%
-  if (owner.characterId === 'huang_smoke' && config.tier === 'S') {
+  if (owner.characterId === 'shoto_todoroki' && config.tier === 'S') {
     rent *= 1.08;
     notes.push("轟焦凍半冷半燃被動 +8%");
   }
   // 奮進人被動：No.1 英雄事務所 (Level 4) 支援費 +20%
-  if (owner.characterId === 'jobs_think' && tileState.level === 4) {
+  if (owner.characterId === 'endeavor_enji_todoroki' && tileState.level === 4) {
     rent *= 1.20;
     notes.push("奮進人烈焰排名戰被動 +20%");
   }
@@ -240,7 +240,7 @@ export function calculateRent(
   }
 
   // 4. 據點干擾或停擺
-  if (tileState.statuses.rentDisabledOnce && owner.characterId !== 'eraser_head') {
+  if (tileState.statuses.rentDisabledOnce && owner.characterId !== 'shota_aizawa') {
     // 停擺一次：支援費為 0
     if (!options.simulate) {
       // 這裡不直接修改 state，在 reducer 觸發時才清除該標記
@@ -249,7 +249,7 @@ export function calculateRent(
     return { rent: 0, notes };
   }
 
-  if (tileState.statuses.disruptedRounds > 0 && owner.characterId !== 'eraser_head') {
+  if (tileState.statuses.disruptedRounds > 0 && owner.characterId !== 'shota_aizawa') {
     rent *= 0.60; // 據點干擾：支援費 × 0.6
     notes.push("據點干擾 -40%");
   }
@@ -295,7 +295,7 @@ export function calculateRent(
   }
 
   // 10. 麗日御茶子被動：支付支援費時 20% 機率再打 8 折
-  if (payer.characterId === 'jolin_zero') {
+  if (payer.characterId === 'ochaco_uraraka') {
     // 為了支持確定性模擬，我們可以用一個自定義種子或預設隨機
     const isLucky = options.simulate 
       ? (options.customSeed !== undefined ? (options.customSeed % 100 < 20) : false)

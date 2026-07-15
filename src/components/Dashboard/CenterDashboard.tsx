@@ -30,35 +30,15 @@ const getCardIcon = (cardId: string) => {
 };
 
 const renderAvatar = (characterId: string, size: number = 32) => {
-  let x = 0;
-  let y = 0;
-  switch (characterId) {
-    case 'bill_rice': x = 0; y = 0; break;
-    case 'gou_lift': x = 33.33; y = 0; break;
-    case 'huang_smoke': x = 66.66; y = 0; break;
-    case 'jolin_zero': x = 100; y = 0; break;
-    case 'musk_bite': x = 0; y = 33.33; break;
-    case 'jobs_think': x = 33.33; y = 66.66; break;
-    case 'lin_mansion': x = 66.66; y = 66.66; break;
-    case 'jay_turn': x = 100; y = 66.66; break;
-    case 'all_might': x = 33.33; y = 33.33; break;
-    case 'eraser_head': x = 66.66; y = 33.33; break;
-    case 'froppy': x = 100; y = 33.33; break;
-    case 'tsukuyomi': x = 0; y = 66.66; break;
-    case 'chargebolt': x = 0; y = 100; break;
-    case 'earphone_jack': x = 33.33; y = 100; break;
-    case 'shigaraki': x = 66.66; y = 100; break;
-    case 'dabi': x = 100; y = 100; break;
-  }
   return (
     <div 
       style={{
         width: `${size}px`,
         height: `${size}px`,
         borderRadius: '50%',
-        backgroundImage: `url(/avatars.jpg)`,
-        backgroundSize: '400% 400%',
-        backgroundPosition: `${x}% ${y}%`,
+        backgroundImage: `url(/avatars/${characterId}.png)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         border: '2px solid var(--border-color)',
         flexShrink: 0,
         boxSizing: 'border-box'
@@ -930,6 +910,15 @@ export const CenterDashboard: React.FC = () => {
             </div>
             
             <div className={styles.sidebarContent}>
+              {/* Showcase Frame for Fullbody Standee */}
+              <div className={styles.sidebarShowcase}>
+                <div className={styles.sidebarShowcaseBlob} style={{ backgroundColor: getPlayerColor(profilePlayer.id) }} />
+                <div 
+                  className={styles.sidebarShowcaseStandee} 
+                  style={{ backgroundImage: `url(/fullbody/${profilePlayer.characterId}.png)` }} 
+                />
+              </div>
+
               {/* Profile Card Section */}
               <div className={styles.profileSection} style={{ borderLeft: `4px solid ${getPlayerColor(profilePlayer.id)}` }}>
                 {renderAvatar(profilePlayer.characterId, 32)}

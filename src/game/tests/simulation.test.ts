@@ -14,7 +14,7 @@ describe('桃園 Hero City 引擎壓力模擬與穩定度測試', () => {
     };
 
     // 啟動遊戲
-    let result = gameReducer(null, startGameCommand(options, 'bill_rice', seed));
+    let result = gameReducer(null, startGameCommand(options, 'izuku_midoriya', seed));
     let state = result.state;
     expect(state).toBeDefined();
 

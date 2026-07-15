@@ -29,16 +29,21 @@ export function canUseAbility(state: GameState, playerId: string): { canUse: boo
 
   // 檢查成本
   let cost = 0;
-  if (charId === 'bill_rice') cost = 800; // 綠谷全覆蓋衝刺 800
-  if (charId === 'musk_bite') cost = 600; // 飯田互聯爆發 600
-  if (charId === 'jay_turn') cost = 600;  // 八百萬道具創造 600
+  if (charId === 'izuku_midoriya') cost = 800; // 綠谷全覆蓋衝刺 800
+  if (charId === 'tenya_iida') cost = 600; // 飯田互聯爆發 600
+  if (charId === 'momo_yaoyorozu') cost = 600;  // 八百萬道具創造 600
+  if (charId === 'ochaco_uraraka') cost = 500; // 麗日零重漂浮 500
+  if (charId === 'katsuki_bakugo') cost = 800; // 爆豪爆破施工 800
+  if (charId === 'shoto_todoroki') cost = 1000; // 轟焦凍冰封戰線 1000
+  if (charId === 'endeavor_enji_todoroki') cost = 1200; // 奮進人烈焰排名戰 1200
+  if (charId === 'eijiro_kirishima') cost = 600; // 切島硬化防守 600
   if (charId === 'all_might') cost = 1000;
-  if (charId === 'eraser_head') cost = 500;
-  if (charId === 'froppy') cost = 400;
-  if (charId === 'tsukuyomi') cost = 500;
-  if (charId === 'chargebolt') cost = 600;
-  if (charId === 'earphone_jack') cost = 400;
-  if (charId === 'shigaraki') cost = 800;
+  if (charId === 'shota_aizawa') cost = 500;
+  if (charId === 'tsuyu_asui') cost = 400;
+  if (charId === 'fumikage_tokoyami') cost = 500;
+  if (charId === 'denki_kaminari') cost = 600;
+  if (charId === 'kyoka_jiro') cost = 400;
+  if (charId === 'tomura_shigaraki') cost = 800;
   if (charId === 'dabi') cost = 500;
 
   if (player.cash < cost) {
@@ -66,16 +71,21 @@ export function applyAbility(
 
   // 1. 扣除能力成本
   let cost = 0;
-  if (charId === 'bill_rice') cost = 800;
-  if (charId === 'musk_bite') cost = 600;
-  if (charId === 'jay_turn') cost = 600;
+  if (charId === 'izuku_midoriya') cost = 800;
+  if (charId === 'tenya_iida') cost = 600;
+  if (charId === 'momo_yaoyorozu') cost = 600;
+  if (charId === 'ochaco_uraraka') cost = 500;
+  if (charId === 'katsuki_bakugo') cost = 800;
+  if (charId === 'shoto_todoroki') cost = 1000;
+  if (charId === 'endeavor_enji_todoroki') cost = 1200;
+  if (charId === 'eijiro_kirishima') cost = 600;
   if (charId === 'all_might') cost = 1000;
-  if (charId === 'eraser_head') cost = 500;
-  if (charId === 'froppy') cost = 400;
-  if (charId === 'tsukuyomi') cost = 500;
-  if (charId === 'chargebolt') cost = 600;
-  if (charId === 'earphone_jack') cost = 400;
-  if (charId === 'shigaraki') cost = 800;
+  if (charId === 'shota_aizawa') cost = 500;
+  if (charId === 'tsuyu_asui') cost = 400;
+  if (charId === 'fumikage_tokoyami') cost = 500;
+  if (charId === 'denki_kaminari') cost = 600;
+  if (charId === 'kyoka_jiro') cost = 400;
+  if (charId === 'tomura_shigaraki') cost = 800;
   if (charId === 'dabi') cost = 500;
 
   if (cost > 0) {
@@ -92,7 +102,7 @@ export function applyAbility(
 
   // 2. 根據不同角色執行個性效果
   switch (charId) {
-    case 'bill_rice': {
+    case 'izuku_midoriya': {
       // 綠谷出久：指定下一次移動點數 1～6
       const diceVal = Number(payload?.diceValue);
       if (!diceVal || diceVal < 1 || diceVal > 6) {
@@ -119,7 +129,7 @@ export function applyAbility(
       break;
     }
 
-    case 'musk_bite': {
+    case 'tenya_iida': {
       // 飯田天哉：下一次固定 6 點
       nextState.players = nextState.players.map(p => {
         if (p.id === playerId) {
@@ -141,7 +151,7 @@ export function applyAbility(
       break;
     }
 
-    case 'jay_turn': {
+    case 'momo_yaoyorozu': {
       // 八百萬百：創造 1 張支援裝備卡 (抽一張卡，並配合被動 20% 機率多抽 1 張)
       events.push({
         type: 'ABILITY_USE',
@@ -168,7 +178,7 @@ export function applyAbility(
       break;
     }
 
-    case 'jolin_zero': {
+    case 'ochaco_uraraka': {
       // 麗日御茶子：取得 1 次支援費 -50% 的漂浮狀態
       nextState.players = nextState.players.map(p => {
         if (p.id === playerId) {
@@ -190,7 +200,7 @@ export function applyAbility(
       break;
     }
 
-    case 'gou_lift': {
+    case 'katsuki_bakugo': {
       // 爆豪勝己：下一次擴建可連升 2 級，但擴建費 × 1.45
       nextState.players = nextState.players.map(p => {
         if (p.id === playerId) {
@@ -212,7 +222,7 @@ export function applyAbility(
       break;
     }
 
-    case 'huang_smoke': {
+    case 'shoto_todoroki': {
       // 轟焦凍：指定一名玩家停 1 回合，該玩家下回合會再次觸發所在格
       const targetPlayerId = payload?.targetPlayerId;
       if (!targetPlayerId || targetPlayerId === playerId) {
@@ -246,7 +256,7 @@ export function applyAbility(
       break;
     }
 
-    case 'jobs_think': {
+    case 'endeavor_enji_todoroki': {
       // 奮進人：自己最高級據點下次支援費 × 1.5
       // 找出玩家名下最高等級的據點
       const ownedTiles = nextState.tiles.filter(t => t.ownerId === playerId);
@@ -281,7 +291,7 @@ export function applyAbility(
       break;
     }
 
-    case 'lin_mansion': {
+    case 'eijiro_kirishima': {
       // 切島銳兒郎：3 個自己的回合內支付支援費 -20%
       nextState.players = nextState.players.map(p => {
         if (p.id === playerId) {
@@ -323,7 +333,7 @@ export function applyAbility(
       break;
     }
 
-    case 'eraser_head': {
+    case 'shota_aizawa': {
       const targetPlayerId = payload?.targetPlayerId;
       if (!targetPlayerId || targetPlayerId === playerId) {
         return { state, events: [], error: '必須選擇其他仍在遊戲中的玩家為目標' };
@@ -357,7 +367,7 @@ export function applyAbility(
       break;
     }
 
-    case 'froppy': {
+    case 'tsuyu_asui': {
       const steps = Number(payload?.steps);
       if (steps !== 2 && steps !== 3) {
         return { state, events: [], error: '跳躍移動步數必須為 2 或 3' };
@@ -381,7 +391,7 @@ export function applyAbility(
       break;
     }
 
-    case 'tsukuyomi': {
+    case 'fumikage_tokoyami': {
       const targetTileId = Number(payload?.targetTileId);
       if (targetTileId === undefined || isNaN(targetTileId)) {
         return { state, events: [], error: '未指定停擺的據點目標' };
@@ -416,7 +426,7 @@ export function applyAbility(
       break;
     }
 
-    case 'chargebolt': {
+    case 'denki_kaminari': {
       nextState.players = nextState.players.map(p => {
         if (p.id === playerId) {
           return {
@@ -441,7 +451,7 @@ export function applyAbility(
       break;
     }
 
-    case 'earphone_jack': {
+    case 'kyoka_jiro': {
       const targetTileId = Number(payload?.targetTileId);
       if (targetTileId === undefined || isNaN(targetTileId)) {
         return { state, events: [], error: '未指定防護罩碎裂目標據點' };
@@ -472,7 +482,7 @@ export function applyAbility(
       break;
     }
 
-    case 'shigaraki': {
+    case 'tomura_shigaraki': {
       const targetTileId = Number(payload?.targetTileId);
       if (targetTileId === undefined || isNaN(targetTileId)) {
         return { state, events: [], error: '未指定要崩壞的據點' };
@@ -547,21 +557,21 @@ export function applyAbility(
 // 輔助函式：取得能力名稱
 function getAbilityName(charId: string): string {
   const names: Record<string, string> = {
-    bill_rice: '全覆蓋衝刺',
-    musk_bite: '互聯爆發',
-    jay_turn: '道具創造',
-    jolin_zero: '零重漂浮',
-    gou_lift: '爆破施工',
-    huang_smoke: '冰封戰線',
-    jobs_think: '烈焰排名戰',
-    lin_mansion: '硬化防守',
+    izuku_midoriya: '全覆蓋衝刺',
+    tenya_iida: '互聯爆發',
+    momo_yaoyorozu: '道具創造',
+    ochaco_uraraka: '零重漂浮',
+    katsuki_bakugo: '爆破施工',
+    shoto_todoroki: '冰封戰線',
+    endeavor_enji_todoroki: '烈焰排名戰',
+    eijiro_kirishima: '硬化防守',
     all_might: '德州粉碎',
-    eraser_head: '抹消視線',
-    froppy: '蛙類跳躍',
-    tsukuyomi: '深淵暗軀',
-    chargebolt: '無差別放電',
-    earphone_jack: '心跳音爆',
-    shigaraki: '崩壞之手',
+    shota_aizawa: '抹消視線',
+    tsuyu_asui: '蛙類跳躍',
+    fumikage_tokoyami: '深淵暗軀',
+    denki_kaminari: '無差別放電',
+    kyoka_jiro: '心跳音爆',
+    tomura_shigaraki: '崩壞之手',
     dabi: '煉獄蒼炎'
   };
   return names[charId] || '未知個性';

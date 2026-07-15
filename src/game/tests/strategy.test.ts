@@ -17,12 +17,12 @@ describe('桃園 Hero City 策略系統與 AI 決策測試', () => {
   };
 
   it('應正確處置角色個性主動技能使用與 CD 冷卻限制', () => {
-    let result = gameReducer(null, startGameCommand(options, 'bill_rice', 'test_seed'));
+    let result = gameReducer(null, startGameCommand(options, 'izuku_midoriya', 'test_seed'));
     let state = result.state;
 
     // 綠谷出久的主動能力：指定骰子點數為 1 到 6。消耗 800，CD 為 5。
     // 首先測試 CD 為 0 時可以使用
-    expect(state.players[0].cooldowns['bill_rice']).toBe(0);
+    expect(state.players[0].cooldowns['izuku_midoriya']).toBe(0);
 
     // 呼叫主動個性命令，設定點數為 4
     result = gameReducer(state, useAbilityCommand('p1', { diceValue: 4 }));
@@ -31,7 +31,7 @@ describe('桃園 Hero City 策略系統與 AI 決策測試', () => {
 
     // 驗證 CD 已設為 5，且扣款了 800 現金
     const p1 = state.players[0];
-    expect(p1.cooldowns['bill_rice']).toBe(5);
+    expect(p1.cooldowns['izuku_midoriya']).toBe(5);
     expect(p1.cash).toBe(20000 - 800);
 
     // 驗證身上有指定骰子 nextDice 效果 (值為 4)
@@ -43,7 +43,7 @@ describe('桃園 Hero City 策略系統與 AI 決策測試', () => {
   });
 
   it('應正確處理卡片使用效果與驗證 (以 site_guard 據點防線與 demolish 死柄木接觸為例)', () => {
-    let result = gameReducer(null, startGameCommand(options, 'bill_rice', 'test_seed'));
+    let result = gameReducer(null, startGameCommand(options, 'izuku_midoriya', 'test_seed'));
     let state = result.state;
 
     // 讓 p1 擁有第 1 格土地，並在手牌加上 site_guard
@@ -86,7 +86,7 @@ describe('桃園 Hero City 策略系統與 AI 決策測試', () => {
   });
 
   it('AI 決策模組應能正常產生行動方案，支援現金預留與前進位移評量', () => {
-    let result = gameReducer(null, startGameCommand(options, 'bill_rice', 'test_seed'));
+    let result = gameReducer(null, startGameCommand(options, 'izuku_midoriya', 'test_seed'));
     let state = result.state;
 
     // 模擬 AI 玩家的回合

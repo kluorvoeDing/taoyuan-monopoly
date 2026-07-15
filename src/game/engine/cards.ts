@@ -459,7 +459,7 @@ export function applyCardEffect(
   // 4. 卡片使用成功，從手牌中扣除該卡片
   nextState.players = nextState.players.map(p => {
     if (p.id === playerId) {
-      const isLucky = p.characterId === 'earphone_jack' && Math.random() < 0.20;
+      const isLucky = p.characterId === 'kyoka_jiro' && Math.random() < 0.20;
       if (isLucky) {
         events.push({
           type: 'CARD_USE',
@@ -500,7 +500,7 @@ export function drawCard(
 
   // 八百萬百被動：20% 機率多抽一張
   let actualCount = count;
-  if (player.characterId === 'jay_turn') {
+  if (player.characterId === 'momo_yaoyorozu') {
     const rng = new SeedableRNG(nextState.rngState || 'default');
     const isLucky = rng.range(1, 100) <= 20;
     nextState.rngState = rng.getStateString();

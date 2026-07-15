@@ -227,23 +227,23 @@ export function makeAiActionDecision(state: GameState, playerId: string): GameCo
   // 2.4 角色個性主動能力決策
   // 八百萬百主動創造裝備：CD 為 0 且手牌不滿、資金高於 7000
   const charCD = player.cooldowns[player.characterId] || 0;
-  if (charCD === 0 && player.characterId === 'jay_turn' && estimatedCash > 7000 && handCards.length < 5) {
+  if (charCD === 0 && player.characterId === 'momo_yaoyorozu' && estimatedCash > 7000 && handCards.length < 5) {
     commands.push({ type: 'USE_ABILITY', playerId });
     estimatedCash -= 600;
   }
 
   // 麗日御茶子主動零重力：CD 為 0，隨時可用
-  if (charCD === 0 && player.characterId === 'jolin_zero') {
+  if (charCD === 0 && player.characterId === 'ochaco_uraraka') {
     commands.push({ type: 'USE_ABILITY', playerId });
   }
 
   // 切島銳兒郎主動硬化防禦：CD 為 0，隨時可用
-  if (charCD === 0 && player.characterId === 'lin_mansion') {
+  if (charCD === 0 && player.characterId === 'eijiro_kirishima') {
     commands.push({ type: 'USE_ABILITY', playerId });
   }
 
   // 奮進人主動烈焰排名戰：CD 為 0，名下至少有據點
-  if (charCD === 0 && player.characterId === 'jobs_think') {
+  if (charCD === 0 && player.characterId === 'endeavor_enji_todoroki') {
     const owned = state.tiles.filter(t => t.ownerId === playerId);
     if (owned.length > 0) {
       commands.push({ type: 'USE_ABILITY', playerId });
@@ -257,7 +257,7 @@ export function makeAiActionDecision(state: GameState, playerId: string): GameCo
   }
 
   // 相澤消太：封印目前資金最多的活躍對手
-  if (charCD === 0 && player.characterId === 'eraser_head' && estimatedCash > 500) {
+  if (charCD === 0 && player.characterId === 'shota_aizawa' && estimatedCash > 500) {
     const target = state.players
       .filter(p => p.id !== playerId && !p.isBankrupt)
       .sort((a, b) => b.cash - a.cash)[0];
@@ -268,7 +268,7 @@ export function makeAiActionDecision(state: GameState, playerId: string): GameCo
   }
 
   // 蛙吹梅雨：如果前方 2 或 3 格是優質目標，開啟跳躍
-  if (charCD === 0 && player.characterId === 'froppy' && estimatedCash > 400) {
+  if (charCD === 0 && player.characterId === 'tsuyu_asui' && estimatedCash > 400) {
     const target2 = (player.position + 2) % state.tiles.length;
     const target3 = (player.position + 3) % state.tiles.length;
     const score2 = scoreTileForAI(state, playerId, target2);
@@ -282,7 +282,7 @@ export function makeAiActionDecision(state: GameState, playerId: string): GameCo
   }
 
   // 常闇踏陰：使 3 格內戰略價值最高且未被停擺的敵方據點停擺
-  if (charCD === 0 && player.characterId === 'tsukuyomi' && estimatedCash > 500) {
+  if (charCD === 0 && player.characterId === 'fumikage_tokoyami' && estimatedCash > 500) {
     const inRange = getNodesWithinRange(player.position, 3, GRAPH_CONNECTIONS);
     const candidateTiles = state.tiles
       .filter(t => t.ownerId && t.ownerId !== playerId && inRange.includes(t.id) && !t.statuses.rentDisabledOnce)
@@ -294,7 +294,7 @@ export function makeAiActionDecision(state: GameState, playerId: string): GameCo
   }
 
   // 上鳴電氣：只要資金充足，立刻開啟全體感電限制
-  if (charCD === 0 && player.characterId === 'chargebolt' && estimatedCash > 600) {
+  if (charCD === 0 && player.characterId === 'denki_kaminari' && estimatedCash > 600) {
     const activeOpponents = state.players.filter(p => p.id !== playerId && !p.isBankrupt);
     if (activeOpponents.length > 0 && estimatedCash > 2500) {
       commands.push({ type: 'USE_ABILITY', playerId });
@@ -303,7 +303,7 @@ export function makeAiActionDecision(state: GameState, playerId: string): GameCo
   }
 
   // 耳郎響香：震碎周圍有主且處於防守狀態的敵方據點
-  if (charCD === 0 && player.characterId === 'earphone_jack' && estimatedCash > 400) {
+  if (charCD === 0 && player.characterId === 'kyoka_jiro' && estimatedCash > 400) {
     const guardedTile = state.tiles.find(t => t.ownerId && t.ownerId !== playerId && t.statuses.guardRounds > 0);
     if (guardedTile) {
       commands.push({ type: 'USE_ABILITY', playerId, payload: { targetTileId: guardedTile.id } });
@@ -312,7 +312,7 @@ export function makeAiActionDecision(state: GameState, playerId: string): GameCo
   }
 
   // 死柄木弔：使場上等級最高的敵方據點崩壞降級
-  if (charCD === 0 && player.characterId === 'shigaraki' && estimatedCash > 800) {
+  if (charCD === 0 && player.characterId === 'tomura_shigaraki' && estimatedCash > 800) {
     const targetEnemyTile = state.tiles
       .filter(t => t.ownerId && t.ownerId !== playerId && t.level > 1)
       .sort((a, b) => b.level - a.level)[0];
@@ -364,7 +364,7 @@ export function makeAiActionDecision(state: GameState, playerId: string): GameCo
       
       if (estimatedCash > cost + reserve) {
         // 如果有爆豪主動個性且冷卻完畢，配合擴建使用
-        if (charCD === 0 && player.characterId === 'gou_lift') {
+        if (charCD === 0 && player.characterId === 'katsuki_bakugo') {
           commands.push({ type: 'USE_ABILITY', playerId }); // 先開個性「爆破施工」
           commands.push({ type: 'UPGRADE_CURRENT_TILE', playerId }); // 再升級 (連升 2 級)
           estimatedCash -= Math.round(cost * 1.45);

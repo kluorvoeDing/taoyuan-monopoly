@@ -4,38 +4,19 @@ import { CHARACTERS } from '../../data/characters';
 import styles from './GameSetup.module.css';
 
 const renderAvatar = (characterId: string, size: number = 32) => {
-  let x = 0;
-  let y = 0;
-  switch (characterId) {
-    case 'bill_rice': x = 0; y = 0; break;
-    case 'gou_lift': x = 33.33; y = 0; break;
-    case 'huang_smoke': x = 66.66; y = 0; break;
-    case 'jolin_zero': x = 100; y = 0; break;
-    case 'musk_bite': x = 0; y = 33.33; break;
-    case 'jobs_think': x = 33.33; y = 66.66; break;
-    case 'lin_mansion': x = 66.66; y = 66.66; break;
-    case 'jay_turn': x = 100; y = 66.66; break;
-    case 'all_might': x = 33.33; y = 33.33; break;
-    case 'eraser_head': x = 66.66; y = 33.33; break;
-    case 'froppy': x = 100; y = 33.33; break;
-    case 'tsukuyomi': x = 0; y = 66.66; break;
-    case 'chargebolt': x = 0; y = 100; break;
-    case 'earphone_jack': x = 33.33; y = 100; break;
-    case 'shigaraki': x = 66.66; y = 100; break;
-    case 'dabi': x = 100; y = 100; break;
-  }
   return (
     <div 
       style={{
         width: `${size}px`,
         height: `${size}px`,
         borderRadius: '50%',
-        backgroundImage: `url(/avatars.jpg)`,
-        backgroundSize: '400% 400%',
-        backgroundPosition: `${x}% ${y}%`,
+        backgroundImage: `url(/avatars/${characterId}.png)`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
         border: '2px solid var(--border-color)',
         flexShrink: 0,
-        boxSizing: 'border-box'
+        boxSizing: 'border-box',
+        zIndex: 1
       }} 
     />
   );
@@ -153,17 +134,21 @@ export const GameSetup: React.FC = () => {
                   className={`${styles.charCard} ${isSelected ? styles.selectedCard : ''}`}
                   onClick={() => setSelectedCharId(char.id)}
                 >
-                  <div className={styles.charHeader} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div 
+                    className={styles.charStandee} 
+                    style={{ backgroundImage: `url(/fullbody/${char.id}.png)` }} 
+                  />
+                  <div className={styles.charHeader} style={{ display: 'flex', alignItems: 'center', gap: '8px', zIndex: 1 }}>
                     {renderAvatar(char.id, 32)}
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', zIndex: 1 }}>
                       <span className={styles.charName}>{char.name}</span>
                       <span className={styles.charQuirk} style={{ fontSize: '10px', marginTop: '2px', alignSelf: 'flex-start' }}>{char.quirk}</span>
                     </div>
                   </div>
-                  <div>
+                  <div style={{ zIndex: 1 }}>
                     <span className={styles.charAbilityName}>{char.abilityName}</span>
                   </div>
-                  <p className={styles.charAbilityText}>{char.abilityText}</p>
+                  <p className={styles.charAbilityText} style={{ zIndex: 1 }}>{char.abilityText}</p>
                 </div>
               );
             })}
